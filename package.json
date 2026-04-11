@@ -4,6 +4,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:setup": "npx tsx lib/db/setup.ts",
     "db:seed": "npx tsx lib/db/seed.ts",
     "db:generate": "drizzle-kit generate",
@@ -43,6 +45,9 @@
     "zod": "^3.25.28"
   },
   "devDependencies": {
-    "@types/google.maps": "^3.58.1"
+    "@types/google.maps": "^3.58.1",
+    "tsx": "^4.20.3",
+    "vite": "^6.3.5",
+    "vitest": "^3.2.4"
   }
 }

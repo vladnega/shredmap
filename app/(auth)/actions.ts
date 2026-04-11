@@ -9,21 +9,15 @@ import {
   organizations,
   organizationMembers,
   activityLogs,
-  type NewUser,
-  type NewOrganization,
-  type NewOrganizationMember,
   type NewActivityLog,
   ActivityType,
   invitations,
 } from '@/lib/db/schema';
-import { comparePasswords, hashPassword, setSession } from '@/lib/auth/session';
+import { comparePasswords, hashPassword } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
+import { signOut as workOsSignOut } from '@workos-inc/authkit-nextjs';
 import { getUser, getUserWithOrganization } from '@/lib/db/queries';
-import {
-  validatedAction,
-  validatedActionWithUser,
-} from '@/lib/auth/middleware';
+import { validatedActionWithUser } from '@/lib/auth/middleware';
 
 async function logActivity(
   organizationId: number | null | undefined,
@@ -43,209 +37,13 @@ async function logActivity(
   await db.insert(activityLogs).values(newActivity);
 }
 
-const signInSchema = z.object({
-  email: z.string().email().min(3).max(255),
-  password: z.string().min(8).max(100),
-});
-
-export const signIn = validatedAction(signInSchema, async (data, formData) => {
-  const { email, password } = data;
-
-  const userWithOrg = await db
-    .select({
-      user: users,
-      organization: organizations,
-    })
-    .from(users)
-    .leftJoin(organizationMembers, eq(users.id, organizationMembers.userId))
-    .leftJoin(organizations, eq(organizationMembers.organizationId, organizations.id))
-    .where(eq(users.email, email))
-    .limit(1);
-
-  if (userWithOrg.length === 0) {
-    return {
-      error: 'Invalid email or password. Please try again.',
-      email,
-      password,
-    };
-  }
-
-  const { user: foundUser, organization: foundOrganization } = userWithOrg[0];
-
-  const isPasswordValid = await comparePasswords(
-    password,
-    foundUser.passwordHash
-  );
-
-  if (!isPasswordValid) {
-    return {
-      error: 'Invalid email or password. Please try again.',
-      email,
-      password,
-    };
-  }
-
-  await Promise.all([
-    setSession(foundUser),
-    logActivity(foundOrganization?.id, foundUser.id, ActivityType.SIGN_IN),
-  ]);
-
-  const redirectTo = formData.get('redirect') as string | null;
-  if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
-    redirect(redirectTo);
-  }
-
-  redirect('/dashboard');
-});
-
-const signUpSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  inviteId: z.string().optional(),
-});
-
-export const signUp = validatedAction(signUpSchema, async (data, formData) => {
-  const { email, password, inviteId } = data;
-
-  const existingUser = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email))
-    .limit(1);
-
-  if (existingUser.length > 0) {
-    return {
-      error: 'Failed to create user. Please try again.',
-      email,
-      password,
-    };
-  }
-
-  const passwordHash = await hashPassword(password);
-
-  const newUser: NewUser = {
-    email,
-    passwordHash,
-    role: 'owner',
-  };
-
-  const [createdUser] = await db.insert(users).values(newUser).returning();
-
-  if (!createdUser) {
-    return {
-      error: 'Failed to create user. Please try again.',
-      email,
-      password,
-    };
-  }
-
-  let organizationId: number;
-  let userRole: string;
-  let createdOrganization: typeof organizations.$inferSelect | null = null;
-
-  if (inviteId) {
-    const inviteNumeric = parseInt(inviteId, 10);
-    if (Number.isNaN(inviteNumeric)) {
-      return { error: 'Invalid invitation.', email, password };
-    }
-    const [invitation] = await db
-      .select()
-      .from(invitations)
-      .where(
-        and(
-          eq(invitations.id, inviteNumeric),
-          eq(invitations.email, email),
-          eq(invitations.status, 'pending')
-        )
-      )
-      .limit(1);
-
-    if (invitation) {
-      organizationId = invitation.organizationId;
-      userRole = invitation.role;
-
-      await db
-        .update(invitations)
-        .set({ status: 'accepted' })
-        .where(eq(invitations.id, invitation.id));
-
-      await logActivity(
-        organizationId,
-        createdUser.id,
-        ActivityType.ACCEPT_INVITATION
-      );
-
-      [createdOrganization] = await db
-        .select()
-        .from(organizations)
-        .where(eq(organizations.id, organizationId))
-        .limit(1);
-    } else {
-      return { error: 'Invalid or expired invitation.', email, password };
-    }
-  } else {
-    const newOrganization: NewOrganization = {
-      name: `${email}'s workspace`,
-    };
-
-    [createdOrganization] = await db
-      .insert(organizations)
-      .values(newOrganization)
-      .returning();
-
-    if (!createdOrganization) {
-      return {
-        error: 'Failed to create organization. Please try again.',
-        email,
-        password,
-      };
-    }
-
-    organizationId = createdOrganization.id;
-    userRole = 'owner';
-
-    await logActivity(
-      organizationId,
-      createdUser.id,
-      ActivityType.CREATE_ORGANIZATION
-    );
-  }
-
-  const newOrganizationMember: NewOrganizationMember = {
-    userId: createdUser.id,
-    organizationId,
-    role: userRole,
-  };
-
-  await Promise.all([
-    db.insert(organizationMembers).values(newOrganizationMember),
-    logActivity(organizationId, createdUser.id, ActivityType.SIGN_UP),
-    setSession(createdUser),
-  ]);
-
-  const redirectTo = formData.get('redirect') as string | null;
-  if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
-    redirect(redirectTo);
-  }
-
-  redirect('/dashboard');
-});
-
 export async function signOut() {
   const user = await getUser();
   if (user) {
     const userWithOrg = await getUserWithOrganization(user.id);
     await logActivity(userWithOrg?.organizationId, user.id, ActivityType.SIGN_OUT);
   }
-  (await cookies()).delete('session');
-
-  const { isWorkOsConfigured } = await import('@/lib/auth/workos-env');
-  if (isWorkOsConfigured()) {
-    const { signOut: workOsSignOut } = await import(
-      '@workos-inc/authkit-nextjs'
-    );
-    await workOsSignOut();
-  }
+  await workOsSignOut();
 }
 
 const updatePasswordSchema = z.object({
@@ -356,7 +154,6 @@ export const deleteAccount = validatedActionWithUser(
         );
     }
 
-    (await cookies()).delete('session');
     redirect('/sign-in');
   }
 );

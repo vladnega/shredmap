@@ -39,18 +39,22 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
         >
           <nav className="h-full overflow-y-auto p-4">
             {navItems.map((item) => (
-              <Link key={item.href} href={item.href} passHref>
-                <Button
-                  variant={pathname === item.href ? 'secondary' : 'ghost'}
-                  className={`shadow-none my-1 w-full justify-start ${
-                    pathname === item.href ? 'bg-gray-100' : ''
-                  }`}
+              <Button
+                key={item.href}
+                variant={pathname === item.href ? 'secondary' : 'ghost'}
+                className={`shadow-none my-1 w-full justify-start ${
+                  pathname === item.href ? 'bg-gray-100' : ''
+                }`}
+                asChild
+              >
+                <Link
+                  href={item.href}
                   onClick={() => setIsSidebarOpen(false)}
                 >
                   <item.icon className="h-4 w-4" />
                   {item.label}
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             ))}
           </nav>
         </aside>

@@ -8,6 +8,7 @@ import { replaceBikeParkMarkersOnMap } from '@/components/map/replace-bike-park-
 import { ParkDetailPanel } from '@/components/map/park-detail-panel';
 import { MapChrome } from '@/components/map/map-chrome';
 import { Button } from '@/components/ui/button';
+import { MAP_UI_LAYER_Z } from '@/lib/map/map-ui-layers';
 
 const UK_CENTER = { lat: 54.2, lng: -2.5 };
 const DEFAULT_ZOOM = 6;
@@ -43,10 +44,8 @@ const MAP_STYLES: google.maps.MapTypeStyle[] = [
 
 export function ShredMap({
   googleMapsApiKey,
-  workOsAuth,
 }: {
   googleMapsApiKey: string;
-  workOsAuth: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -161,6 +160,9 @@ export function ShredMap({
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: true,
+        fullscreenControlOptions: {
+          position: google.maps.ControlPosition.RIGHT_BOTTOM,
+        },
         styles: MAP_STYLES,
         backgroundColor: '#0a0a0a',
       });
@@ -212,7 +214,8 @@ export function ShredMap({
       {parksError && (
         <div
           role="alert"
-          className="pointer-events-auto fixed bottom-6 left-1/2 z-30 flex max-w-md -translate-x-1/2 flex-col gap-3 rounded-lg border border-red-500/35 bg-zinc-950/95 px-4 py-3 shadow-lg backdrop-blur-md sm:bottom-8"
+          className="pointer-events-auto fixed bottom-6 left-1/2 flex max-w-md -translate-x-1/2 flex-col gap-3 rounded-lg border border-red-500/35 bg-zinc-950/95 px-4 py-3 shadow-lg backdrop-blur-md sm:bottom-8"
+          style={{ zIndex: MAP_UI_LAYER_Z.mapErrorToast }}
         >
           <p className="text-sm text-red-100/95">{parksError}</p>
           <Button
@@ -227,10 +230,13 @@ export function ShredMap({
         </div>
       )}
 
-      <MapChrome workOsAuth={workOsAuth} />
+      <MapChrome />
 
       {selectedId && desktop && (
-        <div className="pointer-events-auto absolute bottom-0 right-0 top-0 z-10 flex max-w-[min(100vw,28rem)]">
+        <div
+          className="pointer-events-auto absolute bottom-0 right-0 top-0 flex max-w-[min(100vw,28rem)]"
+          style={{ zIndex: MAP_UI_LAYER_Z.desktopParkPanel }}
+        >
           {detailLoading && !detail ? (
             <div className="flex w-full min-w-[320px] items-center justify-center border-l border-zinc-800 bg-zinc-950/95 px-8">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />

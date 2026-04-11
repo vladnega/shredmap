@@ -66,7 +66,7 @@ Next.js version?
 
 **Next.js 15+ async note:** All route handlers and middleware accessing cookies must be async and properly await cookie operations. This is a breaking change from Next.js 14.
 
-Middleware/proxy code: See README for `authkitMiddleware()` export pattern.
+Middleware/proxy code: See README — **`authkitProxy()`** in `proxy.ts` (Next.js 16+); `authkitMiddleware` is a deprecated alias of `authkitProxy`.
 
 ### Existing Middleware (IMPORTANT)
 

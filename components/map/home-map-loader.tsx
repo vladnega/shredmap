@@ -17,12 +17,8 @@ const ShredMap = dynamic(
 
 export function HomeMapLoader({
   googleMapsApiKey,
-  workOsAuth,
 }: {
   googleMapsApiKey: string;
-  workOsAuth: boolean;
 }) {
-  return (
-    <ShredMap googleMapsApiKey={googleMapsApiKey} workOsAuth={workOsAuth} />
-  );
+  return <ShredMap googleMapsApiKey={googleMapsApiKey} />;
 }

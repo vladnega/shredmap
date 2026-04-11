@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useState, Suspense } from 'react';
-import { Button } from '@/components/ui/button';
 import { Mountain, Home, LogOut } from 'lucide-react';
 import {
   DropdownMenu,
@@ -13,14 +12,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { signOut } from '@/app/(auth)/actions';
 import { useRouter } from 'next/navigation';
-import type { User } from '@/lib/db/schema';
-import useSWR, { mutate } from 'swr';
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { mutate } from 'swr';
+import { useAppUser } from '@/lib/hooks/use-app-user';
+import { PublicAuthActions } from '@/components/auth/public-auth-actions';
 
 function UserMenu() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { data: user } = useSWR<User>('/api/user', fetcher);
+  const { data: user, isLoading } = useAppUser();
   const router = useRouter();
 
   async function handleSignOut() {
@@ -30,20 +28,14 @@ function UserMenu() {
     router.push('/');
   }
 
-  if (!user) {
+  if (isLoading) {
     return (
-      <>
-        <Link
-          href="/sign-in"
-          className="text-sm font-medium text-zinc-300 hover:text-white"
-        >
-          Sign in
-        </Link>
-        <Button asChild className="rounded-full">
-          <Link href="/sign-up">Sign up</Link>
-        </Button>
-      </>
+      <div className="h-9 w-28 animate-pulse rounded-full bg-zinc-800" />
     );
+  }
+
+  if (!user) {
+    return <PublicAuthActions variant="marketing" />;
   }
 
   return (

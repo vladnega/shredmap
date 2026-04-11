@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { X, ExternalLink, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { BikePark } from '@/lib/db/schema';
+import { MAP_UI_LAYER_Z } from '@/lib/map/map-ui-layers';
 
 const AMENITY_LABELS: Record<string, string> = {
   bike_rental: 'Bike rental',
@@ -44,11 +45,18 @@ export function ParkDetailPanel({
 
   const shell =
     layout === 'mobile'
-      ? 'fixed inset-0 z-50 flex flex-col bg-zinc-950/98 backdrop-blur-md animate-in fade-in duration-200'
+      ? 'fixed inset-0 flex flex-col bg-zinc-950/98 backdrop-blur-md animate-in fade-in duration-200'
       : 'h-full w-full max-w-md border-l border-zinc-800 bg-zinc-950/95 backdrop-blur-md shadow-2xl animate-in slide-in-from-right duration-300';
 
   return (
-    <aside className={shell}>
+    <aside
+      className={shell}
+      style={
+        layout === 'mobile'
+          ? { zIndex: MAP_UI_LAYER_Z.mobileParkPanel }
+          : undefined
+      }
+    >
       <div
         className={`flex items-start justify-between gap-3 p-4 border-b border-zinc-800/80 ${
           layout === 'mobile' ? 'pt-[max(1rem,env(safe-area-inset-top))]' : ''

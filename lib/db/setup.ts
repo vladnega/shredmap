@@ -78,8 +78,8 @@ volumes:
   }
 }
 
-function generateAuthSecret(): string {
-  return crypto.randomBytes(32).toString('hex');
+function generateWorkOsCookiePassword(): string {
+  return crypto.randomBytes(32).toString('base64url');
 }
 
 async function writeEnvFile(envVars: Record<string, string>) {
@@ -94,15 +94,22 @@ async function writeEnvFile(envVars: Record<string, string>) {
 async function main() {
   const POSTGRES_URL = await getPostgresURL();
   const BASE_URL = 'http://localhost:3000';
-  const AUTH_SECRET = generateAuthSecret();
+  const WORKOS_COOKIE_PASSWORD = generateWorkOsCookiePassword();
   const OPENAI_API_KEY = await question(
     'OpenAI API key (optional, press Enter to skip): '
+  );
+
+  console.log(
+    '\nAdd WORKOS_API_KEY and WORKOS_CLIENT_ID from https://dashboard.workos.com (AuthKit).'
   );
 
   await writeEnvFile({
     POSTGRES_URL,
     BASE_URL,
-    AUTH_SECRET,
+    WORKOS_COOKIE_PASSWORD,
+    WORKOS_API_KEY: '',
+    WORKOS_CLIENT_ID: '',
+    NEXT_PUBLIC_WORKOS_REDIRECT_URI: `${BASE_URL}/callback`,
     ...(OPENAI_API_KEY.trim()
       ? { OPENAI_API_KEY: OPENAI_API_KEY.trim() }
       : {}),

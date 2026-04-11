@@ -1,0 +1,26 @@
+---
+description: Keep docs in sync when implementing or changing product features
+alwaysApply: true
+---
+
+# Documentation maintenance
+
+When you **add**, **remove**, or **materially change** a user-visible feature, API, route, environment variable, or data model that is documented for Shredmap, update the docs in the **same change** (same PR or commit series).
+
+## What to update
+
+- **Product behavior, map UX, auth modes, bike park APIs, env vars, or schema fields:** edit `docs/shredmap.md` (and `docs/README.md` only if the doc index or cross-links change).
+- **Shared starter structure** (route groups, generic catalog, migration workflow): edit `docs/boilerplate.md` when that documentation is wrong after your change.
+- **Agent-facing vision or guardrails:** edit `AGENTS.md` if the product rules or key file map change.
+- **Setup commands or top-level scripts:** keep `README.md` consistent if behavior or prerequisites change.
+
+## What “materially change” means
+
+- New endpoint, renamed route, new env var, changed auth flow, new table/column that affects the app’s documented behavior — **update docs**.
+- Pure refactors, renames internal to a module, typo fixes, or test-only changes — **docs optional** unless they affect the above.
+
+## Minimal process
+
+1. Finish the code change.
+2. Skim `docs/shredmap.md` (and related files above); adjust sections that would mislead a new contributor.
+3. If nothing user-facing changed, do not add doc churn.

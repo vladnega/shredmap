@@ -5,7 +5,7 @@ import { getUser, getOrganizationForUser } from '@/lib/db/queries';
 import { SWRConfig } from 'swr';
 import { AuthKitProvider } from '@workos-inc/authkit-nextjs/components';
 import { withAuth } from '@workos-inc/authkit-nextjs';
-import { isWorkOsConfigured } from '@/lib/auth/workos-env';
+import { assertWorkOsConfigured } from '@/lib/auth/workos-env';
 
 export const metadata: Metadata = {
   title: {
@@ -28,17 +28,17 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  assertWorkOsConfigured();
+
   let initialAuth: React.ComponentProps<typeof AuthKitProvider>['initialAuth'];
 
-  if (isWorkOsConfigured()) {
-    try {
-      const auth = await withAuth();
-      const safe = { ...(auth as unknown as Record<string, unknown>) };
-      delete safe.accessToken;
-      initialAuth = safe as typeof initialAuth;
-    } catch {
-      initialAuth = undefined;
-    }
+  try {
+    const auth = await withAuth();
+    const safe = { ...(auth as unknown as Record<string, unknown>) };
+    delete safe.accessToken;
+    initialAuth = safe as typeof initialAuth;
+  } catch {
+    initialAuth = undefined;
   }
 
   const swr = (
@@ -57,11 +57,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`dark ${manrope.className}`}>
       <body className="min-h-[100dvh] bg-zinc-950 text-zinc-50 antialiased">
-        {isWorkOsConfigured() ? (
-          <AuthKitProvider initialAuth={initialAuth}>{swr}</AuthKitProvider>
-        ) : (
-          swr
-        )}
+        <AuthKitProvider initialAuth={initialAuth}>{swr}</AuthKitProvider>
       </body>
     </html>
   );

@@ -1,5 +1,7 @@
 # Full-product boilerplate guide
 
+> **Shredmap:** the live product doc is [`shredmap.md`](./shredmap.md). This file describes the **inherited Next.js starter** layers (route groups, catalog demo, generic auth notes). The Shredmap homepage is the **map**, not only the generic marketing layout described below.
+
 ## 1. What this starter is
 
 A **generic Next.js App Router** foundation for products that need:
@@ -7,7 +9,7 @@ A **generic Next.js App Router** foundation for products that need:
 - A **public** website (marketing, listings, content)
 - An **authenticated** area (dashboard, account, admin, AI tools)
 
-It is **not** tied to subscriptions or Stripe. Auth is **email/password + JWT in httpOnly cookies** (same pattern as the original SaaS starter). **WorkOS** is not bundled; you can replace the auth layer if your product needs SSO—hooks are localized under `lib/auth/` and `app/(auth)/`.
+It is **not** tied to subscriptions or Stripe. **Shredmap** overrides auth: **WorkOS AuthKit only** (see [`shredmap.md`](./shredmap.md)). The inherited starter assumed email/password + JWT; this repo no longer uses that path for login.
 
 ## 2. How it is structured
 
@@ -15,8 +17,8 @@ It is **not** tied to subscriptions or Stripe. Auth is **email/password + JWT in
 |------|-------------|-----------------|--------|
 | Public marketing | `(marketing)` | `/`, `/about`, `/contact` | Landing and static-style pages |
 | Catalog demo | `(catalog)` | `/items`, `/items/[slug]` | List + detail backed by `catalog_items` |
-| Auth | `(auth)` | `/sign-in`, `/sign-up` | Server actions in `app/(auth)/actions.ts` |
-| App | `(app)` | `/dashboard`, `/account`, `/admin`, `/chat` | Protected by `middleware.ts` |
+| Auth | `(auth)` | `/sign-in`, `/sign-up` | Immediate WorkOS AuthKit redirects (`lib/auth/workos-redirect.ts`); account actions in `app/(auth)/actions.ts` |
+| App | `(app)` | `/dashboard`, `/account`, `/admin`, `/chat` | `withAuth({ ensureSignedIn: true })` in `(app)/layout.tsx` |
 | API | `app/api/*` | `/api/user`, `/api/organization`, `/api/items`, `/api/ai/chat`, `/api/webhooks` | JSON and AI endpoints |
 
 **Components**
@@ -24,11 +26,11 @@ It is **not** tied to subscriptions or Stripe. Auth is **email/password + JWT in
 - `components/ui/` — shadcn primitives (keep as-is for upgrades)
 - `components/marketing/` — public shell (`SiteHeader`, `HeroTerminal`)
 - `components/app/` — app chrome (`AppHeader`, `DashboardSidebar`, `AccountSubnav`)
-- `components/auth/` — `LoginForm`
+- `components/auth/` — `public-auth-actions.tsx` (links to `/sign-in` / `/sign-up`)
 
 **Libraries**
 
-- `lib/auth/` — session (JWT), validation helpers (`validatedAction`, `withOrganization`)
+- `lib/auth/` — `assertWorkOsConfigured`, password hashing for account actions, validation helpers (`validatedActionWithUser`, `withOrganization`)
 - `lib/db/` — Drizzle schema, queries, migrations, seed
 - `lib/ai/` — OpenAI provider helper for AI routes
 
@@ -36,11 +38,11 @@ Physical DB table names **`teams`** and **`team_members`** are kept for migratio
 
 ## 3. Public vs authenticated
 
-| Public (no login) | Authenticated (`middleware` → `/sign-in` if missing session) |
+| Public (no login) | Authenticated (`(app)` layout + WorkOS session) |
 |-------------------|----------------------------------------------------------------|
 | `/`, `/about`, `/contact`, `/items`, `/items/[slug]` | `/dashboard`, `/dashboard/activity`, `/account`, `/account/security`, `/admin`, `/chat` |
 
-API routes are **not** listed in the middleware matcher; protect them inside each route (e.g. check `getUser()` or role) as your product requires.
+API routes are **not** listed in the proxy `config.matcher`; protect them inside each route (e.g. check `getUser()` or role) as your product requires.
 
 ## 4. Optional modules
 
@@ -54,7 +56,7 @@ API routes are **not** listed in the middleware matcher; protect them inside eac
 1. Rename the product in `app/layout.tsx` metadata, `SiteHeader` / `AppHeader` branding, and copy.
 2. Replace or extend `lib/db/schema.ts` for your domain (keep `users` / session-related tables stable until auth is migrated).
 3. Adjust route groups: add pages under `(marketing)` or `(catalog)`, or add new groups (e.g. `(docs)`).
-4. Tighten `middleware.ts` if you add more protected prefixes.
+4. Tighten `proxy.ts` if you add more protected prefixes.
 5. Remove demo catalog seed data in `lib/db/seed.ts` when you own the schema.
 
 ## 6. Files an LLM agent should touch first
@@ -66,7 +68,7 @@ Priority order for a greenfield product:
 3. `app/(marketing)/page.tsx` and `(marketing)/about`, `contact` — positioning  
 4. `app/(catalog)/**` or new routes — listings/content model  
 5. `app/(auth)/actions.ts` — only if auth rules change  
-6. `middleware.ts` — protected paths  
+6. `proxy.ts` — protected paths (Next.js request proxy; WorkOS `authkitProxy`)  
 7. `app/api/**` — external integrations  
 
 Keep `components/ui/` aligned with shadcn conventions when possible.
@@ -97,6 +99,6 @@ Avoid pulling large agent frameworks until your product needs tool-calling or mu
 
 ## 10. Auth and security notes
 
-- Sessions refresh on GET via `middleware.ts` (JWT rolling expiry).
+- **Shredmap:** WorkOS session via `authkitProxy` in `proxy.ts` and encrypted cookie — see [`shredmap.md`](./shredmap.md).
 - Cookies use `secure` in production; align `BASE_URL` with your deployment.
-- For production webhooks and OAuth later, verify signatures and use HTTPS only.
+- For production webhooks, verify signatures and use HTTPS only.

@@ -2,6 +2,8 @@
 
 This document captures the **product vision** and **technical guardrails** for automated agents (and humans) working on this repository.
 
+**Longer reference (routes, APIs, env, data):** [`docs/shredmap.md`](docs/shredmap.md). Update that doc (and this file when vision/key paths change) whenever you ship or materially change a feature — see `.cursor/rules/keep-docs-up-to-date.mdc`.
+
 ## What we are building
 
 **Shredmap** is a community-maintained website for discovering **UK mountain bike parks**. The experience centers on a **full-screen interactive map** (Google Maps JavaScript API) with **pins for every park** stored in **Postgres**. Users can explore **without logging in**.
@@ -20,11 +22,10 @@ This document captures the **product vision** and **technical guardrails** for a
 
 ### Authentication (WorkOS + AuthKit)
 
-- **WorkOS** is the primary authentication stack, using **AuthKit** as the hosted UI template.
+- **WorkOS** is the only sign-in path: **AuthKit** hosted UI, **`assertWorkOsConfigured()`** in `lib/auth/workos-env.ts` fails fast if required env vars are missing (no legacy login).
 - **Social logins**: **Google OAuth** and **Instagram** (configured in the WorkOS dashboard alongside AuthKit).
-- **Session**: `@workos-inc/authkit-nextjs` — callback at `/callback`, middleware integration, `AuthKitProvider` in the root layout when WorkOS env vars are set.
-- **User sync**: OAuth sign-in runs `syncWorkOsUserToDatabase` so every WorkOS user gets a row in `users` (`work_os_user_id`) for app data (reviews, roles, etc.).
-- **Legacy** email/password JWT flows may still exist for older demo accounts; new product work should assume **WorkOS** unless explicitly migrating or removing legacy auth.
+- **Session**: `@workos-inc/authkit-nextjs` — callback at `/callback`, `authkitProxy` in `proxy.ts`, `AuthKitProvider` in the root layout.
+- **User sync**: OAuth callback runs `syncWorkOsUserToDatabase` so every WorkOS user gets a row in `users` (`work_os_user_id`) for app data (reviews, roles, etc.).
 
 ### Logged-in capabilities (vision)
 
@@ -51,21 +52,19 @@ The intent is **community maintenance**: the map and directory improve through c
 | Schema | `lib/db/schema.ts` — `bikeParks`, `parkReviews`, `users.workOsUserId` |
 | Seed bike parks | `data/bike-parks.seed.json` + `lib/bike-parks/seed-from-json.ts`, invoked from `lib/db/seed.ts` |
 | WorkOS callback | `app/callback/route.ts`, `lib/auth/sync-workos-user.ts` |
-| WorkOS env check | `lib/auth/workos-env.ts` |
-| Middleware | `middleware.ts` — WorkOS `authkitMiddleware` when configured, else legacy JWT behavior |
+| WorkOS env | `lib/auth/workos-env.ts` — `assertWorkOsConfigured()` |
+| Request proxy (WorkOS) | `proxy.ts` — WorkOS `authkitProxy` |
 
 ## Environment variables
 
 See `.env.example`. Minimum for the full vision:
 
 - `POSTGRES_URL`, `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
-- WorkOS: `WORKOS_API_KEY`, `WORKOS_CLIENT_ID`, `WORKOS_COOKIE_PASSWORD`, `NEXT_PUBLIC_WORKOS_REDIRECT_URI` (must match the WorkOS dashboard and the `/callback` route)
+- WorkOS (required): `WORKOS_API_KEY`, `WORKOS_CLIENT_ID`, `WORKOS_COOKIE_PASSWORD`, `NEXT_PUBLIC_WORKOS_REDIRECT_URI` (must match the WorkOS dashboard and the `/callback` route)
 
 ## Follow-up work (not necessarily implemented yet)
 
 - Review submission UI and API (authenticated).
 - Moderator-only CRUD for `bike_parks` (admin routes + UI).
 - Richer opening hours editing, image uploads, and moderation workflows.
-- Optional: migrate or remove legacy JWT auth once WorkOS covers all users.
-
 When in doubt, re-read this file and match existing patterns in the codebase before introducing new abstractions.
