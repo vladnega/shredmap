@@ -5,6 +5,10 @@ import {
   text,
   timestamp,
   integer,
+  doublePrecision,
+  uuid,
+  jsonb,
+  smallint,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -13,6 +17,8 @@ export const users = pgTable('users', {
   name: varchar('name', { length: 100 }),
   email: varchar('email', { length: 255 }).notNull().unique(),
   passwordHash: text('password_hash').notNull(),
+  /** When set, this account is linked to WorkOS AuthKit (social login). */
+  workOsUserId: varchar('work_os_user_id', { length: 255 }).unique(),
   role: varchar('role', { length: 20 }).notNull().default('member'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -74,6 +80,46 @@ export const catalogItems = pgTable('catalog_items', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+/** Mountain bike parks (seeded from local JSON; community can extend). */
+export const bikeParks = pgTable('bike_parks', {
+  id: uuid('id').primaryKey(),
+  name: varchar('name', { length: 512 }).notNull(),
+  description: text('description'),
+  latitude: doublePrecision('latitude').notNull(),
+  longitude: doublePrecision('longitude').notNull(),
+  logoUrl: text('logo_url'),
+  pinLogoUrl: text('pin_logo_url'),
+  amenities: jsonb('amenities').$type<Record<string, boolean>>(),
+  trailCount: integer('trail_count'),
+  totalTrailLengthKm: doublePrecision('total_trail_length_km'),
+  ratingScore: doublePrecision('rating_score'),
+  ratingVoteCount: integer('rating_vote_count'),
+  primaryCtaUrl: text('primary_cta_url'),
+  primaryCtaType: varchar('primary_cta_type', { length: 64 }),
+  payment: varchar('payment', { length: 64 }),
+  status: varchar('status', { length: 64 }),
+  galleryImageUrls: jsonb('gallery_image_urls').$type<string[]>(),
+  /** Structured hours when available (manual or future import). */
+  openingHours: jsonb('opening_hours'),
+  /** Optional external reference URL for this listing. */
+  sourceUrl: text('source_url'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const parkReviews = pgTable('park_reviews', {
+  id: serial('id').primaryKey(),
+  bikeParkId: uuid('bike_park_id')
+    .notNull()
+    .references(() => bikeParks.id, { onDelete: 'cascade' }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id),
+  rating: smallint('rating').notNull(),
+  body: text('body').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   organizationMembers: many(organizationMembers),
   activityLogs: many(activityLogs),
@@ -83,6 +129,22 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
 export const usersRelations = relations(users, ({ many }) => ({
   organizationMembers: many(organizationMembers),
   invitationsSent: many(invitations),
+  parkReviews: many(parkReviews),
+}));
+
+export const bikeParksRelations = relations(bikeParks, ({ many }) => ({
+  reviews: many(parkReviews),
+}));
+
+export const parkReviewsRelations = relations(parkReviews, ({ one }) => ({
+  bikePark: one(bikeParks, {
+    fields: [parkReviews.bikeParkId],
+    references: [bikeParks.id],
+  }),
+  user: one(users, {
+    fields: [parkReviews.userId],
+    references: [users.id],
+  }),
 }));
 
 export const invitationsRelations = relations(invitations, ({ one }) => ({
@@ -133,6 +195,10 @@ export type Invitation = typeof invitations.$inferSelect;
 export type NewInvitation = typeof invitations.$inferInsert;
 export type CatalogItem = typeof catalogItems.$inferSelect;
 export type NewCatalogItem = typeof catalogItems.$inferInsert;
+export type BikePark = typeof bikeParks.$inferSelect;
+export type NewBikePark = typeof bikeParks.$inferInsert;
+export type ParkReview = typeof parkReviews.$inferSelect;
+export type NewParkReview = typeof parkReviews.$inferInsert;
 
 export type OrganizationWithMembers = Organization & {
   organizationMembers: (OrganizationMember & {

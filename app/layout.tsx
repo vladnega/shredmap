@@ -3,40 +3,65 @@ import type { Metadata, Viewport } from 'next';
 import { Manrope } from 'next/font/google';
 import { getUser, getOrganizationForUser } from '@/lib/db/queries';
 import { SWRConfig } from 'swr';
+import { AuthKitProvider } from '@workos-inc/authkit-nextjs/components';
+import { withAuth } from '@workos-inc/authkit-nextjs';
+import { isWorkOsConfigured } from '@/lib/auth/workos-env';
 
 export const metadata: Metadata = {
-  title: 'Full-product starter',
+  title: {
+    default: 'Shredmap — UK mountain bike parks',
+    template: '%s — Shredmap',
+  },
   description:
-    'Next.js boilerplate with public marketing, catalog, auth, and app areas.',
+    'Discover UK mountain bike parks on an interactive map. Community-driven trail intel, reviews, and park details.',
 };
 
 export const viewport: Viewport = {
   maximumScale: 1,
+  themeColor: '#09090b',
 };
 
 const manrope = Manrope({ subsets: ['latin'] });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <html
-      lang="en"
-      className={`bg-white dark:bg-gray-950 text-black dark:text-white ${manrope.className}`}
+  let initialAuth: React.ComponentProps<typeof AuthKitProvider>['initialAuth'];
+
+  if (isWorkOsConfigured()) {
+    try {
+      const auth = await withAuth();
+      const safe = { ...(auth as unknown as Record<string, unknown>) };
+      delete safe.accessToken;
+      initialAuth = safe as typeof initialAuth;
+    } catch {
+      initialAuth = undefined;
+    }
+  }
+
+  const swr = (
+    <SWRConfig
+      value={{
+        fallback: {
+          '/api/user': getUser(),
+          '/api/organization': getOrganizationForUser(),
+        },
+      }}
     >
-      <body className="min-h-[100dvh] bg-gray-50">
-        <SWRConfig
-          value={{
-            fallback: {
-              '/api/user': getUser(),
-              '/api/organization': getOrganizationForUser(),
-            },
-          }}
-        >
-          {children}
-        </SWRConfig>
+      {children}
+    </SWRConfig>
+  );
+
+  return (
+    <html lang="en" className={`dark ${manrope.className}`}>
+      <body className="min-h-[100dvh] bg-zinc-950 text-zinc-50 antialiased">
+        {isWorkOsConfigured() ? (
+          <AuthKitProvider initialAuth={initialAuth}>{swr}</AuthKitProvider>
+        ) : (
+          swr
+        )}
       </body>
     </html>
   );

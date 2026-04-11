@@ -232,10 +232,20 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
 });
 
 export async function signOut() {
-  const user = (await getUser()) as User;
-  const userWithOrg = await getUserWithOrganization(user.id);
-  await logActivity(userWithOrg?.organizationId, user.id, ActivityType.SIGN_OUT);
+  const user = await getUser();
+  if (user) {
+    const userWithOrg = await getUserWithOrganization(user.id);
+    await logActivity(userWithOrg?.organizationId, user.id, ActivityType.SIGN_OUT);
+  }
   (await cookies()).delete('session');
+
+  const { isWorkOsConfigured } = await import('@/lib/auth/workos-env');
+  if (isWorkOsConfigured()) {
+    const { signOut: workOsSignOut } = await import(
+      '@workos-inc/authkit-nextjs'
+    );
+    await workOsSignOut();
+  }
 }
 
 const updatePasswordSchema = z.object({

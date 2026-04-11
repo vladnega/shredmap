@@ -1,6 +1,7 @@
 import { db } from './drizzle';
 import { users, organizations, organizationMembers, catalogItems } from './schema';
 import { hashPassword } from '@/lib/auth/session';
+import { seedBikeParksFromJsonFile } from '@/lib/bike-parks/seed-from-json';
 
 async function seed() {
   const email = 'test@test.com';
@@ -48,6 +49,22 @@ async function seed() {
   ]);
 
   console.log('Catalog items seeded.');
+
+  try {
+    const n = await seedBikeParksFromJsonFile();
+    if (n > 0) {
+      console.log(`Bike parks seeded/updated: ${n} rows (data/bike-parks.seed.json).`);
+    } else {
+      console.log(
+        'Bike parks: skipped (add data/bike-parks.seed.json to seed parks).'
+      );
+    }
+  } catch (e) {
+    console.warn(
+      'Bike park seed failed:',
+      e instanceof Error ? e.message : e
+    );
+  }
 }
 
 seed()

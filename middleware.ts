@@ -1,12 +1,22 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import type { NextRequest, NextFetchEvent } from 'next/server';
+import { authkitMiddleware } from '@workos-inc/authkit-nextjs';
+import { isWorkOsConfigured } from '@/lib/auth/workos-env';
 import { signToken, verifyToken } from '@/lib/auth/session';
 
-const protectedPrefixes = ['/dashboard', '/account', '/admin', '/chat'];
+const workosHandler = isWorkOsConfigured() ? authkitMiddleware() : null;
 
-export async function middleware(request: NextRequest) {
+export default async function middleware(
+  request: NextRequest,
+  event: NextFetchEvent
+) {
+  if (workosHandler) {
+    return workosHandler(request, event);
+  }
+
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get('session');
+  const protectedPrefixes = ['/dashboard', '/account', '/admin', '/chat'];
   const isProtectedRoute = protectedPrefixes.some((p) =>
     pathname.startsWith(p)
   );
@@ -46,6 +56,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
   runtime: 'nodejs',
 };

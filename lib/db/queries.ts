@@ -2,14 +2,37 @@ import { desc, and, eq, isNull } from 'drizzle-orm';
 import { db } from './drizzle';
 import {
   activityLogs,
+  bikeParks,
   catalogItems,
   organizationMembers,
   users,
 } from './schema';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth/session';
+import { withAuth } from '@workos-inc/authkit-nextjs';
+import { isWorkOsConfigured } from '@/lib/auth/workos-env';
 
 export async function getUser() {
+  if (isWorkOsConfigured()) {
+    try {
+      const { user: wUser } = await withAuth();
+      if (wUser) {
+        const row = await db
+          .select()
+          .from(users)
+          .where(
+            and(eq(users.workOsUserId, wUser.id), isNull(users.deletedAt))
+          )
+          .limit(1);
+        if (row.length > 0) {
+          return row[0];
+        }
+      }
+    } catch {
+      // WorkOS session not available in this context
+    }
+  }
+
   const sessionCookie = (await cookies()).get('session');
   if (!sessionCookie || !sessionCookie.value) {
     return null;
@@ -115,6 +138,28 @@ export async function getCatalogItemBySlug(slug: string) {
     .select()
     .from(catalogItems)
     .where(eq(catalogItems.slug, slug))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function listBikeParkMarkers() {
+  return db
+    .select({
+      id: bikeParks.id,
+      name: bikeParks.name,
+      latitude: bikeParks.latitude,
+      longitude: bikeParks.longitude,
+      ratingScore: bikeParks.ratingScore,
+      pinLogoUrl: bikeParks.pinLogoUrl,
+    })
+    .from(bikeParks);
+}
+
+export async function getBikeParkById(id: string) {
+  const rows = await db
+    .select()
+    .from(bikeParks)
+    .where(eq(bikeParks.id, id))
     .limit(1);
   return rows[0] ?? null;
 }

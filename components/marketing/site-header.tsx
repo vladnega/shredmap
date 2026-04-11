@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
-import { CircleIcon, Home, LogOut } from 'lucide-react';
+import { Mountain, Home, LogOut } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +35,7 @@ function UserMenu() {
       <>
         <Link
           href="/sign-in"
-          className="text-sm font-medium text-gray-700 hover:text-gray-900"
+          className="text-sm font-medium text-zinc-300 hover:text-white"
         >
           Sign in
         </Link>
@@ -81,22 +81,22 @@ function UserMenu() {
 
 export function SiteHeader() {
   return (
-    <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+    <header className="border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center gap-6">
         <Link href="/" className="flex items-center shrink-0">
-          <CircleIcon className="h-6 w-6 text-orange-500" />
-          <span className="ml-2 text-xl font-semibold text-gray-900">
-            Starter
+          <Mountain className="h-6 w-6 text-orange-500" />
+          <span className="ml-2 text-xl font-black tracking-tight text-white">
+            shredmap
           </span>
         </Link>
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-700">
-          <Link href="/items" className="hover:text-gray-900">
+        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-300">
+          <Link href="/items" className="hover:text-white transition-colors">
             Catalog
           </Link>
-          <Link href="/about" className="hover:text-gray-900">
+          <Link href="/about" className="hover:text-white transition-colors">
             About
           </Link>
-          <Link href="/contact" className="hover:text-gray-900">
+          <Link href="/contact" className="hover:text-white transition-colors">
             Contact
           </Link>
         </nav>
