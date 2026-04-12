@@ -68,11 +68,33 @@ See **`.env.example`** in the repo root. Highlights:
 
 | Variable | Purpose |
 |----------|---------|
-| `POSTGRES_URL` | Database connection |
+| `POSTGRES_URL` or `DATABASE_URL` | Postgres connection string. **Neon:** set either variable to the string from the Neon dashboard (hosts end in `neon.tech`; the app uses Neon's HTTP driver on Vercel). For local Docker, see `pnpm db:setup`. |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Browser key with **Maps JavaScript API** enabled (homepage map) |
 | `BASE_URL` | Canonical URL (links, callbacks) |
 | `WORKOS_API_KEY`, `WORKOS_CLIENT_ID`, `WORKOS_COOKIE_PASSWORD`, `NEXT_PUBLIC_WORKOS_REDIRECT_URI` | WorkOS AuthKit (required; must match dashboard; redirect URI typically `…/callback`) |
 | `OPENAI_API_KEY`, `OPENAI_MODEL` | Optional — `/chat` and `/api/ai/chat` |
+
+### Vercel: “Development” vs hosted deploys
+
+In the dashboard, **Development** is where you store variables for **local** work (`vercel env pull`, `vercel pull --environment=development`). It is **not** the same as a **Preview** deployment.
+
+Hosted test URLs always come from **Preview** (`vercel deploy` without `--prod`) or **Production** (`vercel deploy --prod`), unless you add a **custom environment**.
+
+`vercel deploy --target development` fails with *Custom environment not found* because the CLI treats any target other than `production` / `preview` as a **custom environment slug**, and the built-in Development bucket is not a deployable custom environment in that API.
+
+**To get a stable hosted URL that uses the same secrets as Development:**
+
+1. In Vercel: **Project → Settings → Environments → Create environment**.
+2. Choose a slug (this repo assumes **`dev`**) and set **type** / options so it matches your workflow; use **Import variables from → Development** (or copy them) so keys match what you use locally.
+3. Deploy from the repo root:
+
+   `pnpm vercel:deploy:dev`
+
+   (runs `vercel deploy --target dev`.)
+
+If you prefer another slug, change the script in `package.json` or run `vercel deploy --target <your-slug> -y`.
+
+Until that custom environment exists, use **`vercel deploy --target preview`** (or plain `vercel deploy`) for a hosted Preview deployment using **Preview**-scoped variables.
 
 ---
 

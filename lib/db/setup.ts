@@ -34,9 +34,9 @@ async function getPostgresURL(): Promise<string> {
   }
 
   console.log(
-    'Find managed Postgres: https://vercel.com/docs/storage/vercel-postgres'
+    'For Neon, copy the connection string from the Neon dashboard (POSTGRES_URL or DATABASE_URL).'
   );
-  return await question('Enter your POSTGRES_URL: ');
+  return await question('Enter your POSTGRES_URL or DATABASE_URL: ');
 }
 
 async function setupLocalPostgres() {
