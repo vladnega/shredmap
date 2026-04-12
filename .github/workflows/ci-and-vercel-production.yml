@@ -1,0 +1,60 @@
+# Runs tests on pull requests targeting `main` and on every push to `main`.
+# Production deploy runs only on push to `main` (including when a PR is merged).
+#
+# Required GitHub repository secrets (Settings → Secrets and variables → Actions):
+#   VERCEL_TOKEN        — Create at https://vercel.com/account/tokens
+#   VERCEL_ORG_ID       — Vercel dashboard: Team Settings → Team ID (team_…)
+#   VERCEL_PROJECT_ID   — Project → Settings → General → Project ID (prj_…)
+#
+# If the same GitHub repo is connected under Vercel → Project → Git with automatic
+# production deploys enabled, each push to `main` would deploy twice—turn off the
+# Git integration’s production auto-deploy for this project, or remove the deploy job.
+
+name: CI and production deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test
+        run: pnpm test
+
+  deploy:
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Deploy to Vercel (production)
+        run: vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
