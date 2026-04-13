@@ -3,9 +3,27 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { X, ExternalLink, MapPin } from 'lucide-react';
+import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
 import type { BikePark } from '@/lib/db/schema';
+import { BIKE_PARK_STAFF_ROLE_SLUGS } from '@/lib/auth/bike-park-staff-roles';
+import { useAppUser } from '@/lib/hooks/use-app-user';
 import { MAP_UI_LAYER_Z } from '@/lib/map/map-ui-layers';
+
+type WorkOsRolesPayload = { roles: string[] };
+
+function rolesFetcher(url: string): Promise<WorkOsRolesPayload> {
+  return fetch(url).then((r) => {
+    if (!r.ok) throw new Error(String(r.status));
+    return r.json() as Promise<WorkOsRolesPayload>;
+  });
+}
+
+function isBikeParkStaffFromRoles(roles: string[] | undefined): boolean {
+  if (!roles?.length) return false;
+  const set = new Set(roles);
+  return BIKE_PARK_STAFF_ROLE_SLUGS.some((slug) => set.has(slug));
+}
 
 const AMENITY_LABELS: Record<string, string> = {
   bike_rental: 'Bike rental',
@@ -41,6 +59,14 @@ export function ParkDetailPanel({
   onClose: () => void;
   layout: 'desktop' | 'mobile';
 }) {
+  const { data: user } = useAppUser();
+  const { data: roleData } = useSWR<WorkOsRolesPayload>(
+    user ? '/api/workos/roles' : null,
+    rolesFetcher,
+    { revalidateOnFocus: false },
+  );
+  const isStaff = isBikeParkStaffFromRoles(roleData?.roles);
+
   const facilities = amenityList(park.amenities ?? undefined);
 
   const shell =
@@ -192,12 +218,34 @@ export function ParkDetailPanel({
           {park.latitude.toFixed(4)}, {park.longitude.toFixed(4)}
         </p>
 
-        <p className="mt-4 text-xs text-zinc-600">
-          Community reviews and edits require an account.{' '}
-          <Link href="/sign-in" className="text-orange-400 hover:underline">
-            Sign in
-          </Link>
-        </p>
+        {!user ? (
+          <p className="mt-4 text-xs text-zinc-600">
+            Community reviews and edits require an account.{' '}
+            <Link href="/sign-in" className="text-orange-400 hover:underline">
+              Sign in
+            </Link>
+          </p>
+        ) : (
+          <div className="mt-4 space-y-2 text-xs text-zinc-500">
+            <p>
+              You are signed in. Community reviews will appear here once that feature
+              ships.{' '}
+              <Link href="/account" className="text-orange-400 hover:underline">
+                Account
+              </Link>
+            </p>
+            {isStaff ? (
+              <p>
+                <Link
+                  href="/admin/bike-parks"
+                  className="font-medium text-orange-400 hover:underline"
+                >
+                  Manage bike parks
+                </Link>
+              </p>
+            ) : null}
+          </div>
+        )}
       </div>
     </aside>
   );

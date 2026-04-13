@@ -8,7 +8,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['node_modules', '.next', 'dist', 'build'],
+    exclude: ['node_modules', '.next', 'dist', 'build', 'e2e/**'],
   },
   resolve: {
     alias: {

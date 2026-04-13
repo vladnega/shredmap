@@ -33,7 +33,7 @@ This document captures the **product vision** and **technical guardrails** for a
 | Capability | Who |
 |------------|-----|
 | **Post reviews** for a park | Any signed-in user |
-| **Add / edit bike parks** | **Moderators** only (derived from WorkOS roles/permissions) |
+| **Add / edit / delete bike parks** | **Admin** or **moderator** WorkOS role slugs (see `lib/auth/bike-park-staff-roles.ts`; enforced on API routes) |
 
 The intent is **community maintenance**: the map and directory improve through contributions, with trusted moderators curating structure and quality.
 
@@ -57,7 +57,8 @@ The intent is **community maintenance**: the map and directory improve through c
 | Area | Location |
 |------|----------|
 | Map UI | `components/map/` (`shred-map.tsx`, `park-detail-panel.tsx`, `map-chrome.tsx`, `home-map-loader.tsx`) |
-| Bike park API | `app/api/bike-parks/`, `lib/db/queries.ts` (`listBikeParkMarkers`, `getBikeParkById`) |
+| Bike park API | `app/api/bike-parks/`, staff auth `lib/auth/bike-park-staff.ts`, `lib/db/queries.ts` |
+| Staff bike park UI | `app/(app)/admin/bike-parks/` |
 | Schema | `lib/db/schema.ts` — `bikeParks`, `parkReviews`, `users.workOsUserId` |
 | Seed bike parks | `data/bike-parks.seed.json` + `lib/bike-parks/seed-from-json.ts`, invoked from `lib/db/seed.ts` |
 | WorkOS callback | `app/callback/route.ts`, `lib/auth/sync-workos-user.ts` |
@@ -74,6 +75,5 @@ See `.env.example`. Minimum for the full vision:
 ## Follow-up work (not necessarily implemented yet)
 
 - Review submission UI and API (authenticated).
-- Moderator-only CRUD for `bike_parks` (admin routes + UI).
 - Richer opening hours editing, image uploads, and moderation workflows.
 When in doubt, re-read this file and match existing patterns in the codebase before introducing new abstractions.
