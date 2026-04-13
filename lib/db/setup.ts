@@ -2,10 +2,6 @@ import { promises as fs } from 'node:fs';
 import readline from 'node:readline';
 import crypto from 'node:crypto';
 import path from 'node:path';
-import { exec } from 'node:child_process';
-import { promisify } from 'node:util';
-
-const execAsync = promisify(exec);
 
 function question(query: string): Promise<string> {
   const rl = readline.createInterface({
@@ -21,61 +17,18 @@ function question(query: string): Promise<string> {
   );
 }
 
-async function getPostgresURL(): Promise<string> {
-  console.log('Step 1: Postgres');
-  const dbChoice = await question(
-    'Local Postgres with Docker (L) or remote URL (R)? (L/R): '
-  );
-
-  if (dbChoice.toLowerCase() === 'l') {
-    console.log('Setting up local Postgres with Docker...');
-    await setupLocalPostgres();
-    return 'postgres://postgres:postgres@localhost:54322/postgres';
-  }
-
+async function getNeonDatabaseUrl(): Promise<string> {
   console.log(
-    'For Neon, copy the connection string from the Neon dashboard (POSTGRES_URL or DATABASE_URL).'
+    'Database (Neon):\n' +
+      'Paste a connection string from https://console.neon.tech → your project → Connection details.\n' +
+      'The app uses Neon\'s HTTP driver (`@neondatabase/serverless` + `drizzle-orm/neon-http`).'
   );
-  return await question('Enter your POSTGRES_URL or DATABASE_URL: ');
-}
-
-async function setupLocalPostgres() {
-  try {
-    await execAsync('docker --version');
-  } catch {
-    console.error('Docker is required for the local option.');
+  const url = (await question('POSTGRES_URL or DATABASE_URL: ')).trim();
+  if (!url) {
+    console.error('A database URL is required.');
     process.exit(1);
   }
-
-  const dockerComposeContent = `
-services:
-  postgres:
-    image: postgres:16.4-alpine
-    container_name: full_product_starter_postgres
-    environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "54322:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
-`;
-
-  await fs.writeFile(
-    path.join(process.cwd(), 'docker-compose.yml'),
-    dockerComposeContent
-  );
-
-  try {
-    await execAsync('docker compose up -d');
-  } catch {
-    console.error('Failed to start Docker Compose.');
-    process.exit(1);
-  }
+  return url;
 }
 
 function generateWorkOsCookiePassword(): string {
@@ -92,7 +45,7 @@ async function writeEnvFile(envVars: Record<string, string>) {
 }
 
 async function main() {
-  const POSTGRES_URL = await getPostgresURL();
+  const POSTGRES_URL = await getNeonDatabaseUrl();
   const BASE_URL = 'http://localhost:3000';
   const WORKOS_COOKIE_PASSWORD = generateWorkOsCookiePassword();
   const OPENAI_API_KEY = await question(

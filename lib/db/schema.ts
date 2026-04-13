@@ -19,7 +19,6 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   /** When set, this account is linked to WorkOS AuthKit (social login). */
   workOsUserId: varchar('work_os_user_id', { length: 255 }).unique(),
-  role: varchar('role', { length: 20 }).notNull().default('member'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   deletedAt: timestamp('deleted_at'),

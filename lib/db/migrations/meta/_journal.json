@@ -15,6 +15,13 @@
       "when": 1775926030161,
       "tag": "0001_premium_blob",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776074400000,
+      "tag": "0002_workos_roles_source_of_truth",
+      "breakpoints": true
     }
   ]
 }

@@ -14,8 +14,8 @@ function useAuthReturnQuery() {
 }
 
 /**
- * Shared signed-out actions: `/sign-in` and `/sign-up` immediately redirect to WorkOS
- * AuthKit; `?redirect=` preserves the return path.
+ * Shared signed-out action: `/sign-in` redirects to WorkOS AuthKit.
+ * `?redirect=` preserves the return path.
  */
 export function PublicAuthActions({
   variant,
@@ -33,14 +33,6 @@ export function PublicAuthActions({
         >
           <Link href={`/sign-in${q}`}>Sign in</Link>
         </Button>
-        <Button
-          asChild
-          variant="secondary"
-          size="sm"
-          className="rounded-full border border-zinc-600 bg-zinc-900/90 font-semibold text-white backdrop-blur-md hover:bg-zinc-800"
-        >
-          <Link href={`/sign-up${q}`}>Sign up</Link>
-        </Button>
       </div>
     );
   }
@@ -53,9 +45,6 @@ export function PublicAuthActions({
       >
         Sign in
       </Link>
-      <Button asChild className="rounded-full">
-        <Link href={`/sign-up${q}`}>Sign up</Link>
-      </Button>
     </>
   );
 }

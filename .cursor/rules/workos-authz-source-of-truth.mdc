@@ -1,0 +1,10 @@
+# WorkOS authorization source of truth
+
+When implementing authentication/authorization behavior in Shredmap:
+
+- Treat **WorkOS** as the only source of truth for user roles and permissions.
+- Do **not** add, read, or rely on a `users.role`-style authorization column in Postgres.
+- Use WorkOS session data and/or WorkOS organization membership APIs to resolve current roles.
+- Keep role checks permission-oriented when possible (avoid brittle hardcoded slug assumptions unless explicitly required).
+
+If a change introduces or modifies role-based behavior, ensure `docs/shredmap.md` and `AGENTS.md` stay consistent with this decision in the same change.

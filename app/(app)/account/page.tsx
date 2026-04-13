@@ -25,6 +25,11 @@ type AccountFormProps = {
   emailValue?: string;
 };
 
+type WorkOsRoles = {
+  roles: string[];
+  permissions: string[];
+};
+
 function AccountForm({
   state,
   nameValue = '',
@@ -77,16 +82,19 @@ export default function AccountPage() {
     updateAccount,
     {}
   );
+  const { data: workOsRoles } = useSWR<WorkOsRoles>('/api/workos/roles', fetcher);
+  const roles = workOsRoles?.roles ?? [];
 
   return (
-    <section>
-      <h1 className="text-lg lg:text-2xl font-medium text-gray-900 mb-6">
-        Profile
-      </h1>
+    <section className="mx-auto w-full max-w-3xl">
+      <h1 className="text-2xl font-semibold text-white">Account</h1>
+      <p className="mt-2 max-w-2xl text-zinc-400">
+        Manage your profile details and view your current WorkOS role assignments.
+      </p>
 
-      <Card>
+      <Card className="mt-8 border-zinc-800 bg-zinc-900/70 text-zinc-100">
         <CardHeader>
-          <CardTitle>Account</CardTitle>
+          <CardTitle className="text-base text-zinc-100">Profile</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" action={formAction}>
@@ -94,14 +102,14 @@ export default function AccountPage() {
               <AccountFormWithData state={state} />
             </Suspense>
             {state.error ? (
-              <p className="text-red-500 text-sm">{state.error}</p>
+              <p className="text-sm text-red-400">{state.error}</p>
             ) : null}
             {state.success ? (
-              <p className="text-green-500 text-sm">{state.success}</p>
+              <p className="text-sm text-emerald-400">{state.success}</p>
             ) : null}
             <Button
               type="submit"
-              className="bg-orange-500 hover:bg-orange-600 text-white"
+              className="bg-orange-500 text-white hover:bg-orange-600"
               disabled={isPending}
             >
               {isPending ? (
@@ -114,6 +122,30 @@ export default function AccountPage() {
               )}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4 border-zinc-800 bg-zinc-900/70 text-zinc-100">
+        <CardHeader>
+          <CardTitle className="text-base text-zinc-100">WorkOS Roles</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {roles.length === 0 ? (
+            <p className="text-sm text-zinc-400">
+              No roles are currently assigned in your active WorkOS session.
+            </p>
+          ) : (
+            <ul className="flex flex-wrap gap-2">
+              {roles.map((role) => (
+                <li
+                  key={role}
+                  className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-sm text-zinc-100"
+                >
+                  {role}
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
     </section>

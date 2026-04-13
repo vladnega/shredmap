@@ -27,6 +27,11 @@ type ActionState = {
   success?: string;
 };
 
+type WorkOsRoles = {
+  roles: string[];
+  permissions: string[];
+};
+
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 function MembersSkeleton() {
@@ -128,8 +133,9 @@ function InviteSkeleton() {
 }
 
 function InviteMember() {
-  const { data: user } = useSWR<User>('/api/user', fetcher);
-  const isOwner = user?.role === 'owner';
+  const { data: roleData } = useSWR<WorkOsRoles>('/api/workos/roles', fetcher);
+  const roles = roleData?.roles ?? [];
+  const isOwner = roles.some((role) => role === 'owner' || role.endsWith(':owner'));
   const [inviteState, inviteAction, isInvitePending] = useActionState<
     ActionState,
     FormData

@@ -14,7 +14,7 @@ function nameFromWorkOsUser(wu: {
 }
 
 /**
- * Ensures a local `users` row exists for the WorkOS user (reviews, roles, org tooling).
+ * Ensures a local `users` row exists for the WorkOS user (reviews and org tooling).
  * Links by `work_os_user_id`, or upgrades an existing email row when safe.
  */
 export async function syncWorkOsUserToDatabase(wu: {
@@ -77,6 +77,5 @@ export async function syncWorkOsUserToDatabase(wu: {
     name: nameFromWorkOsUser(wu),
     workOsUserId: wu.id,
     passwordHash: placeholderHash,
-    role: 'member',
   });
 }

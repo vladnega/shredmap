@@ -25,14 +25,15 @@ This document captures the **product vision** and **technical guardrails** for a
 - **WorkOS** is the only sign-in path: **AuthKit** hosted UI, **`assertWorkOsConfigured()`** in `lib/auth/workos-env.ts` fails fast if required env vars are missing (no legacy login).
 - **Social logins**: **Google OAuth** and **Instagram** (configured in the WorkOS dashboard alongside AuthKit).
 - **Session**: `@workos-inc/authkit-nextjs` — callback at `/callback`, `authkitProxy` in `proxy.ts`, `AuthKitProvider` in the root layout.
-- **User sync**: OAuth callback runs `syncWorkOsUserToDatabase` so every WorkOS user gets a row in `users` (`work_os_user_id`) for app data (reviews, roles, etc.).
+- **User sync**: OAuth callback runs `syncWorkOsUserToDatabase` so every WorkOS user gets a row in `users` (`work_os_user_id`) for app data (reviews, linking, etc.).
+- **AuthZ ownership**: WorkOS is the source of truth for roles and permissions. Do not store user authorization roles in Postgres; resolve them from WorkOS (session and/or WorkOS membership APIs) at request time.
 
 ### Logged-in capabilities (vision)
 
 | Capability | Who |
 |------------|-----|
 | **Post reviews** for a park | Any signed-in user |
-| **Add / edit bike parks** | **Moderators** only (`users.role` or a dedicated moderator flag — align on one approach as the app evolves) |
+| **Add / edit bike parks** | **Moderators** only (derived from WorkOS roles/permissions) |
 
 The intent is **community maintenance**: the map and directory improve through contributions, with trusted moderators curating structure and quality.
 
@@ -42,6 +43,14 @@ The intent is **community maintenance**: the map and directory improve through c
 - **Do not** require login for viewing the map or park details.
 - **Prefer mobile UX** when tradeoffs appear between phone and desktop.
 - **Keep changes focused** on the requested task; avoid drive-by refactors across unrelated boilerplate unless the task requires it.
+
+### Integration guardrails (agents)
+
+- For **WorkOS** or other third-party auth/authz SDK changes, validate fields and payload shapes against the **installed SDK types** in `node_modules` before coding.
+- Use the relevant skill references (for WorkOS: `workos` skill + the matching `references/*.md`) and prefer canonical SDK/session fields over guessed JSON shapes.
+- If docs and runtime types differ, treat the installed SDK types as the implementation contract and document any discrepancy in `docs/shredmap.md`.
+- Do **not** cast objects (`as SomeObject`, `as Record<...>`, `as unknown as ...`) to force a shape. Use real types, inference, destructuring, and type guards instead.
+- If an object cast seems unavoidable, stop and ask the user for permission before adding it.
 
 ## Key files and areas
 

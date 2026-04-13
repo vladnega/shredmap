@@ -34,9 +34,8 @@ export default async function RootLayout({
 
   try {
     const auth = await withAuth();
-    const safe = { ...(auth as unknown as Record<string, unknown>) };
-    delete safe.accessToken;
-    initialAuth = safe as typeof initialAuth;
+    const { accessToken: _accessToken, ...safe } = auth;
+    initialAuth = safe;
   } catch {
     initialAuth = undefined;
   }

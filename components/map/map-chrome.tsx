@@ -2,10 +2,87 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Mountain } from 'lucide-react';
+import { LogOut, Map, Menu, Mountain, ShieldCheck, UserCircle2 } from 'lucide-react';
 import { useAppUser } from '@/lib/hooks/use-app-user';
 import { PublicAuthActions } from '@/components/auth/public-auth-actions';
 import { MAP_UI_LAYER_Z } from '@/lib/map/map-ui-layers';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { signOut } from '@/app/(auth)/actions';
+import { useRouter } from 'next/navigation';
+import { mutate } from 'swr';
+
+function LoggedInMapMenu({ userName }: { userName: string | null }) {
+  const router = useRouter();
+
+  async function handleSignOut() {
+    await signOut();
+    mutate('/api/user');
+    mutate('/api/organization');
+    router.push('/');
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="secondary"
+          className="rounded-full border border-zinc-700 bg-zinc-900/90 px-3 text-white backdrop-blur-md hover:bg-zinc-800"
+          aria-label="Open navigation menu"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        sideOffset={8}
+        className="w-56 rounded-2xl border-zinc-700 bg-zinc-900/95 p-2 text-zinc-100 shadow-xl shadow-black/50 backdrop-blur-md"
+      >
+        <DropdownMenuLabel className="truncate px-2 py-1 text-xs uppercase tracking-wide text-zinc-400">
+          {userName ?? 'Signed in'}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator className="bg-zinc-700/80" />
+        <DropdownMenuItem className="rounded-xl px-2 py-2 text-zinc-100 focus:bg-zinc-800 focus:text-white">
+          <Link href="/" className="flex w-full items-center gap-2">
+            <Map className="h-4 w-4 text-orange-400" />
+            <span>Map</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="rounded-xl px-2 py-2 text-zinc-100 focus:bg-zinc-800 focus:text-white">
+          <Link href="/account" className="flex w-full items-center gap-2">
+            <UserCircle2 className="h-4 w-4 text-orange-400" />
+            <span>Account</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="rounded-xl px-2 py-2 text-zinc-100 focus:bg-zinc-800 focus:text-white">
+          <Link href="/admin" className="flex w-full items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-orange-400" />
+            <span>Admin</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator className="bg-zinc-700/80" />
+        <DropdownMenuItem
+          onSelect={() => {
+            void handleSignOut();
+          }}
+          className="rounded-xl px-2 py-2 text-zinc-100 focus:bg-zinc-800 focus:text-white"
+        >
+          <span className="flex w-full items-center gap-2">
+            <LogOut className="h-4 w-4 text-orange-400" />
+            <span>Sign out</span>
+          </span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function MapChrome() {
   const { data: user, isLoading } = useAppUser();
@@ -29,13 +106,7 @@ export function MapChrome() {
             <div className="h-9 w-20 animate-pulse rounded-full bg-zinc-800" />
           </div>
         ) : user ? (
-          <Button
-            asChild
-            variant="secondary"
-            className="rounded-full border border-zinc-700 bg-zinc-900/90 font-semibold text-white backdrop-blur-md hover:bg-zinc-800"
-          >
-            <Link href="/admin">Admin</Link>
-          </Button>
+          <LoggedInMapMenu userName={user.name} />
         ) : (
           <PublicAuthActions variant="map" />
         )}

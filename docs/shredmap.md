@@ -12,11 +12,13 @@
 - **Markers:** Loaded from `GET /api/bike-parks` via `lib/bike-parks/fetch-bike-parks-for-map.ts`, which validates the JSON and passes points to `replaceBikeParkMarkersOnMap` (`components/map/replace-bike-park-markers.ts`). Requests respect **abort signals** so rapid navigation or remounts do not apply stale markers.
 - **Selection:** Choosing a marker sets a selected park id; details are fetched from `GET /api/bike-parks/[id]` (`components/map/shred-map.tsx`).
 - **Layout:** **Mobile-first** — narrow viewports use a **full-screen detail panel**; **desktop** uses a **side panel** so the map stays visible (`park-detail-panel.tsx`, `shred-map.tsx`).
-- **Chrome:** Top bar with branding and sign-in (`map-chrome.tsx`). **`/sign-in`** and **`/sign-up`** are server routes that immediately redirect to WorkOS AuthKit via `getSignInUrl` / `getSignUpUrl` (`lib/auth/workos-redirect.ts`; optional `?redirect=` for return path).
+- **Chrome:** Top bar with branding and auth/navigation (`map-chrome.tsx`). Signed-out users see sign-in/sign-up actions; signed-in users get a themed hamburger menu with quick links for **Map**, **Account**, **Admin**, and **Sign out**. **`/sign-in`** and **`/sign-up`** are server routes that immediately redirect to WorkOS AuthKit via `getSignInUrl` / `getSignUpUrl` (`lib/auth/workos-redirect.ts`; optional `?redirect=` for return path).
 
 ### Authentication
 
-**WorkOS AuthKit only** — required env vars are validated with **`assertWorkOsConfigured()`** (`lib/auth/workos-env.ts`); the app throws if they are missing. Hosted AuthKit flow; callback **`GET /callback`** (`app/callback/route.ts`) runs **`syncWorkOsUserToDatabase`** so each WorkOS user has a row in `users` (`workOsUserId`). Root **`proxy.ts`** runs **`authkitProxy`** from `@workos-inc/authkit-nextjs` (Next.js convention; replaces deprecated `middleware.ts`). The **`(app)`** layout uses **`withAuth({ ensureSignedIn: true })`** for `/dashboard`, `/account`, `/admin`, `/chat`. Configure OAuth providers (e.g. Google) in the **WorkOS dashboard**.
+**WorkOS AuthKit only** — required env vars are validated with **`assertWorkOsConfigured()`** (`lib/auth/workos-env.ts`); the app throws if they are missing. Hosted AuthKit flow; callback **`GET /callback`** (`app/callback/route.ts`) runs **`syncWorkOsUserToDatabase`** so each WorkOS user has a row in `users` (`workOsUserId`). Root **`proxy.ts`** runs **`authkitProxy`** from `@workos-inc/authkit-nextjs` (Next.js convention; replaces deprecated `middleware.ts`). The **`(app)`** layout uses **`withAuth({ ensureSignedIn: true })`** for `/dashboard`, `/account`, `/admin`, `/chat`.
+
+**Authorization source of truth:** WorkOS is the only authority for role/permission data. The app must not persist user authorization roles in Postgres. `/api/workos/roles` reads the canonical AuthKit session schema from `withAuth()` (`roles`, `role`, `permissions`), and the account page displays those WorkOS-derived values.
 
 ### Inherited starter surfaces
 
@@ -31,7 +33,7 @@ The repo still includes **marketing**, **catalog** (`/items`), **dashboard**, **
 | `GET` | `/api/bike-parks` | Returns `{ parks }` with minimal fields for map markers (`listBikeParkMarkers` in `lib/db/queries.ts`). |
 | `GET` | `/api/bike-parks/[id]` | Returns a full `bike_parks` row for the detail panel. |
 
-Other JSON routes (`/api/user`, `/api/organization`, `/api/items`, `/api/ai/chat`, `/api/webhooks`, `/api/admin/items`) follow the boilerplate; protect or extend as needed.
+Other JSON routes (`/api/user`, `/api/organization`, `/api/workos/roles`, `/api/items`, `/api/ai/chat`, `/api/webhooks`, `/api/admin/items`) follow the boilerplate; protect or extend as needed.
 
 ---
 

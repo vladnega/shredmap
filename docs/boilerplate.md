@@ -25,7 +25,7 @@ It is **not** tied to subscriptions or Stripe. **Shredmap** overrides auth: **Wo
 
 - `components/ui/` — shadcn primitives (keep as-is for upgrades)
 - `components/marketing/` — public shell (`SiteHeader`, `HeroTerminal`)
-- `components/app/` — app chrome (`AppHeader`, `DashboardSidebar`, `AccountSubnav`)
+- `components/app/` — app chrome (`AppHeader`, `DashboardSidebar`)
 - `components/auth/` — `public-auth-actions.tsx` (links to `/sign-in` / `/sign-up`)
 
 **Libraries**
@@ -42,12 +42,12 @@ Physical DB table names **`teams`** and **`team_members`** are kept for migratio
 |-------------------|----------------------------------------------------------------|
 | `/`, `/about`, `/contact`, `/items`, `/items/[slug]` | `/dashboard`, `/dashboard/activity`, `/account`, `/account/security`, `/admin`, `/chat` |
 
-API routes are **not** listed in the proxy `config.matcher`; protect them inside each route (e.g. check `getUser()` or role) as your product requires.
+API routes are **not** listed in the proxy `config.matcher`; protect them inside each route (e.g. check `getUser()` and WorkOS-derived permissions) as your product requires.
 
 ## 4. Optional modules
 
 - **AI** — omit `OPENAI_API_KEY`; `/chat` and `/api/ai/chat` return a clear error until configured.
-- **Admin** — `/admin` and `POST /api/admin/items` are stubs; add real authorization (e.g. `user.role` or org role).
+- **Admin** — `/admin` and `POST /api/admin/items` are stubs; add real authorization using WorkOS roles/permissions.
 - **Webhooks** — `POST /api/webhooks` accepts JSON and returns `{ received: true }`; add signature verification per provider.
 - **Catalog** — `catalog_items` is an example; replace or extend for real listings.
 

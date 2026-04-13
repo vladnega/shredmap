@@ -1,0 +1,10 @@
+# No object casts without permission
+
+When editing this codebase:
+
+- Do **not** cast objects to force a shape.
+- This includes patterns like `as Record<string, unknown>`, `as SomeObject`, and `as unknown as SomeObject`.
+- Prefer proper SDK/library types, inferred types, destructuring, helper functions, and explicit type guards.
+- If an object cast appears unavoidable, stop and ask the user for permission before introducing it.
+
+This rule is especially important for third-party API/auth integrations where guessed object shapes can hide schema mistakes.
