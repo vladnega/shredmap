@@ -34,7 +34,7 @@ export function MapChrome() {
             variant="secondary"
             className="rounded-full border border-zinc-700 bg-zinc-900/90 font-semibold text-white backdrop-blur-md hover:bg-zinc-800"
           >
-            <Link href="/dashboard">Account</Link>
+            <Link href="/admin">Admin</Link>
           </Button>
         ) : (
           <PublicAuthActions variant="map" />

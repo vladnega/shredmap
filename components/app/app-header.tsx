@@ -4,12 +4,10 @@ import Link from 'next/link';
 import { useState, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  CircleIcon,
+  Mountain,
   LogOut,
-  LayoutDashboard,
-  UserRound,
-  Shield,
-  MessageSquare,
+  ShieldCheck,
+  Map,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -60,9 +58,9 @@ function UserMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="flex flex-col gap-1">
         <DropdownMenuItem className="cursor-pointer">
-          <Link href="/account" className="flex w-full items-center">
-            <UserRound className="mr-2 h-4 w-4" />
-            <span>Account</span>
+          <Link href="/admin" className="flex w-full items-center">
+            <ShieldCheck className="mr-2 h-4 w-4" />
+            <span>Admin</span>
           </Link>
         </DropdownMenuItem>
         <form action={handleSignOut} className="w-full">
@@ -80,35 +78,35 @@ function UserMenu() {
 
 export function AppHeader() {
   return (
-    <header className="border-b border-gray-200 bg-white">
+    <header className="border-b border-zinc-800 bg-zinc-950/95 backdrop-blur supports-[backdrop-filter]:bg-zinc-950/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap justify-between items-center gap-4">
         <Link href="/" className="flex items-center shrink-0">
-          <CircleIcon className="h-6 w-6 text-orange-500" />
-          <span className="ml-2 text-xl font-semibold text-gray-900">Starter</span>
+          <Mountain className="h-6 w-6 text-orange-500" />
+          <span className="ml-2 text-xl font-black tracking-tight text-white">
+            shredmap
+          </span>
         </Link>
         <nav className="flex items-center gap-1 order-3 sm:order-2 w-full sm:w-auto justify-center sm:justify-start">
-          <Button asChild variant="ghost" size="sm" className="rounded-full">
-            <Link href="/dashboard">
-              <LayoutDashboard className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Dashboard</span>
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="rounded-full text-zinc-200 hover:bg-zinc-800 hover:text-white"
+          >
+            <Link href="/">
+              <Map className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Map</span>
             </Link>
           </Button>
-          <Button asChild variant="ghost" size="sm" className="rounded-full">
-            <Link href="/account">
-              <UserRound className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Account</span>
-            </Link>
-          </Button>
-          <Button asChild variant="ghost" size="sm" className="rounded-full">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="rounded-full text-zinc-200 hover:bg-zinc-800 hover:text-white"
+          >
             <Link href="/admin">
-              <Shield className="h-4 w-4 sm:mr-1" />
+              <ShieldCheck className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">Admin</span>
-            </Link>
-          </Button>
-          <Button asChild variant="ghost" size="sm" className="rounded-full">
-            <Link href="/chat">
-              <MessageSquare className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Chat</span>
             </Link>
           </Button>
         </nav>
