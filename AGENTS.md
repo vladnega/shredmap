@@ -77,3 +77,32 @@ See `.env.example`. Minimum for the full vision:
 - Moderator-only CRUD for `bike_parks` (admin routes + UI).
 - Richer opening hours editing, image uploads, and moderation workflows.
 When in doubt, re-read this file and match existing patterns in the codebase before introducing new abstractions.
+
+## Cursor Cloud specific instructions
+
+### Services overview
+
+| Service | How to run | Notes |
+|---------|-----------|-------|
+| Next.js dev server | `pnpm dev` | Runs on port 3000 with Turbopack |
+| Postgres (Neon) | Hosted — no local setup | Uses `@neondatabase/serverless` HTTP driver; `POSTGRES_URL` env var |
+
+### Key commands
+
+See `README.md` → Scripts table for all commands. Quick reference:
+
+- **Dev server:** `pnpm dev` (Turbopack, port 3000)
+- **Type check:** `npx tsc --noEmit`
+- **Tests:** `pnpm test` (Vitest)
+- **Build:** `pnpm build`
+- **DB migrate:** `pnpm db:migrate`
+- **DB seed:** `pnpm db:seed` (fails gracefully if data already exists — duplicate-key errors are expected on re-runs)
+
+### Non-obvious caveats
+
+- **No ESLint**: the project has no lint script or ESLint config. Use `npx tsc --noEmit` as the primary static analysis step.
+- **WorkOS env vars are required at startup**: `proxy.ts` calls `assertWorkOsConfigured()` at module-import time, and the root layout also calls it. The dev server will crash if `WORKOS_API_KEY`, `WORKOS_CLIENT_ID`, `WORKOS_COOKIE_PASSWORD`, or `NEXT_PUBLIC_WORKOS_REDIRECT_URI` are missing.
+- **`.env` file must be created from environment secrets**: copy `.env.example` and populate from environment variables. The `.env` file is gitignored.
+- **pnpm build scripts**: `package.json` includes `pnpm.onlyBuiltDependencies` to allow `@tailwindcss/oxide`, `esbuild`, and `sharp` native builds without interactive approval.
+- **Database is Neon-only**: the Drizzle connection in `lib/db/drizzle.ts` uses `@neondatabase/serverless` (HTTP driver). A standard local `pg` connection will not work without code changes.
+- **Seed is not idempotent**: `pnpm db:seed` inserts rows without upsert logic — re-running on a seeded database fails with duplicate-key errors. This is harmless; the data is already present.
