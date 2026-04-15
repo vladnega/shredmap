@@ -8,6 +8,8 @@ import {
   LogOut,
   ShieldCheck,
   Map,
+  UserRound,
+  ChevronDown,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -45,16 +47,21 @@ function UserMenu() {
 
   return (
     <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-      <DropdownMenuTrigger>
-        <Avatar className="cursor-pointer size-9">
-          <AvatarImage alt={user.name || ''} />
-          <AvatarFallback>
-            {user.email
-              .split(' ')
-              .map((n) => n[0])
-              .join('')}
-          </AvatarFallback>
-        </Avatar>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-9 rounded-full border border-zinc-700/80 bg-zinc-900/85 px-1.5 pr-2 text-zinc-100 shadow-sm shadow-black/25 backdrop-blur-md transition-colors hover:bg-zinc-800/90"
+        >
+          <Avatar className="size-7">
+            <AvatarImage alt={user.name || user.email} />
+            <AvatarFallback className="bg-gradient-to-br from-orange-500/30 to-orange-700/10 text-orange-100">
+              <UserRound className="h-3.5 w-3.5" />
+            </AvatarFallback>
+          </Avatar>
+          <ChevronDown className="ml-1 h-3.5 w-3.5 text-zinc-400" />
+          <span className="sr-only">Open account menu</span>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="flex flex-col gap-1">
         <DropdownMenuItem className="cursor-pointer">

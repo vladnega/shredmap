@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { X, ExternalLink, MapPin } from 'lucide-react';
+import { X, ExternalLink, MapPin, Pencil } from 'lucide-react';
 import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
 import type { BikePark } from '@/lib/db/schema';
@@ -193,6 +193,14 @@ export function ParkDetailPanel({
         )}
 
         <div className="mt-8 flex flex-col gap-2 sm:flex-row">
+          {isStaff ? (
+            <Button asChild variant="secondary" className="rounded-full border border-zinc-700">
+              <Link href={`/admin/bike-parks/${park.id}`}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit park
+              </Link>
+            </Button>
+          ) : null}
           {park.primaryCtaUrl && (
             <Button
               asChild

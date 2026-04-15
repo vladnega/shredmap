@@ -28,13 +28,28 @@ type BikeParkLocationPickerProps = {
   googleMapsApiKey: string;
   latitude: number;
   longitude: number;
+  markerTitle?: string;
+  markerLogoUrl?: string;
   onLocationChange: (lat: number, lng: number) => void;
 };
+
+function buildMarkerIcon(logoUrl?: string): google.maps.Icon | undefined {
+  const trimmed = logoUrl?.trim();
+  if (!trimmed) return undefined;
+
+  return {
+    url: trimmed,
+    scaledSize: new google.maps.Size(40, 40),
+    anchor: new google.maps.Point(20, 20),
+  };
+}
 
 export function BikeParkLocationPicker({
   googleMapsApiKey,
   latitude,
   longitude,
+  markerTitle,
+  markerLogoUrl,
   onLocationChange,
 }: BikeParkLocationPickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -79,6 +94,8 @@ export function BikeParkLocationPicker({
         map,
         position: center,
         draggable: true,
+        title: markerTitle?.trim() || 'Bike park location',
+        icon: buildMarkerIcon(markerLogoUrl),
       });
       markerRef.current = marker;
 
@@ -107,6 +124,14 @@ export function BikeParkLocationPicker({
       mapRef.current = null;
     };
   }, [googleMapsApiKey]);
+
+  useEffect(() => {
+    const marker = markerRef.current;
+    if (!ready || !marker) return;
+
+    marker.setTitle(markerTitle?.trim() || 'Bike park location');
+    marker.setIcon(buildMarkerIcon(markerLogoUrl) ?? null);
+  }, [markerLogoUrl, markerTitle, ready]);
 
   useEffect(() => {
     if (!ready) return;

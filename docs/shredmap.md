@@ -9,11 +9,12 @@
 ### Map (homepage)
 
 - **Route:** `/` (`app/(marketing)/page.tsx`) loads `HomeMapLoader`, which dynamically imports the client map (`ssr: false`) so the Google Maps JS API only runs in the browser.
-- **Markers:** Loaded from `GET /api/bike-parks` via `lib/bike-parks/fetch-bike-parks-for-map.ts`, which validates the JSON and passes points to `replaceBikeParkMarkersOnMap` (`components/map/replace-bike-park-markers.ts`). Requests respect **abort signals** so rapid navigation or remounts do not apply stale markers.
+- **Markers:** Loaded from `GET /api/bike-parks` via `lib/bike-parks/fetch-bike-parks-for-map.ts`, which validates the JSON and passes points to `replaceBikeParkMarkersOnMap` (`components/map/replace-bike-park-markers.ts`). Map pins use each park's `pinLogoUrl` when available, falling back to `logoUrl` and then the default Google marker. Requests respect **abort signals** so rapid navigation or remounts do not apply stale markers.
 - **Selection:** Choosing a marker sets a selected park id; details are fetched from `GET /api/bike-parks/[id]` (`components/map/shred-map.tsx`).
 - **Layout:** **Mobile-first** — narrow viewports use a **full-screen detail panel**; **desktop** uses a **side panel** so the map stays visible (`park-detail-panel.tsx`, `shred-map.tsx`).
 - **Chrome:** Top bar with branding and auth/navigation (`map-chrome.tsx`). Signed-out users see sign-in/sign-up actions; signed-in users get a themed hamburger menu with quick links for **Map**, **Account**, **Admin**, optional **Manage parks** (when WorkOS roles include `admin` or `moderator`), and **Sign out**. **`/sign-in`** and **`/sign-up`** are server routes that immediately redirect to WorkOS AuthKit via `getSignInUrl` / `getSignUpUrl` (`lib/auth/workos-redirect.ts`; optional `?redirect=` for return path).
 - **Park detail footer:** Signed-out users see a prompt to sign in for community features; signed-in users see account messaging; users with staff roles also get a **Manage bike parks** link (`park-detail-panel.tsx`).
+- **Park detail staff action:** Staff users (`admin` / `moderator`) also see an **Edit park** button in the pin side panel that deep-links directly to the per-park admin route (`/admin/bike-parks/[parkId]`).
 
 ### Authentication
 
@@ -31,17 +32,18 @@ The repo still includes **marketing**, **catalog** (`/items`), **dashboard**, **
 
 | Method | Path | Who | Notes |
 |--------|------|-----|-------|
-| `GET` | `/api/bike-parks` | Public | `{ parks }` — minimal fields for map markers (`listBikeParkMarkers`). |
+| `GET` | `/api/bike-parks` | Public | `{ parks }` — minimal fields for map markers (`id`, `name`, `latitude`, `longitude`, optional `pinLogoUrl` / `logoUrl`). |
 | `GET` | `/api/bike-parks/[id]` | Public | Full `bike_parks` row for the detail panel. |
 | `POST` | `/api/bike-parks` | Staff | Create park; JSON body validated with Zod (`lib/bike-parks/api-schemas.ts`). Server assigns UUID `id`. |
 | `PATCH` | `/api/bike-parks/[id]` | Staff | Partial update; at least one field required. |
 | `DELETE` | `/api/bike-parks/[id]` | Staff | Deletes row; `park_reviews` cascade. |
 
-**Staff** means a signed-in WorkOS user whose role slugs include **`admin`** or **`moderator`** (from the AuthKit session and organization memberships — same aggregation as `/api/workos/roles`). Enforced in `requireBikeParkStaff()` (`lib/auth/bike-park-staff.ts`) on every mutating handler. Missing session → **401**; signed in but not staff → **403**.
+**Staff** means a signed-in WorkOS user whose role slugs include **`admin`** or **`moderator`** (from the AuthKit session and organization memberships — same aggregation as `/api/workos/roles`). Enforced in `requireBikeParkStaff()` (`lib/auth/bike-park-staff.ts`) on every mutating handler. Membership role-slug lookups are cached per WorkOS user (TTL configured in `lib/auth/bike-park-staff.ts`) to reduce repeat WorkOS latency during route transitions and staff actions, and the cache tag is explicitly invalidated during sign-out. Missing session → **401**; signed in but not staff → **403**.
 
 ### Staff UI
 
-- **`/admin/bike-parks`** — form to create/edit/delete parks (RSC checks `isBikeParkStaffMember()`; API remains authoritative).
+- **`/admin/bike-parks`** — staff-only directory with instant name search and infinite scrolling, sorted alphabetically; selecting a park opens its editor.
+- **`/admin/bike-parks/[parkId]`** — per-park editor route for updating/deleting a specific listing, used by both the manage list and map side panel.
 - Moderator **example** for manual QA: [Bull Track Bike Park](https://bulltrackbikepark.co.uk/) — name e.g. `Bull Track Bike Park`, website `https://bulltrackbikepark.co.uk/`, short description, coordinates near Crowborough (~`51.058`, `-0.161`).
 
 ### Diagrams

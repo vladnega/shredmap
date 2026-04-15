@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { and, eq, sql } from 'drizzle-orm';
+import { revalidateTag } from 'next/cache';
 import { db } from '@/lib/db/drizzle';
 import {
   User,
@@ -18,6 +19,7 @@ import { redirect } from 'next/navigation';
 import { signOut as workOsSignOut } from '@workos-inc/authkit-nextjs';
 import { getUser, getUserWithOrganization } from '@/lib/db/queries';
 import { validatedActionWithUser } from '@/lib/auth/middleware';
+import { WORKOS_ROLE_MEMBERSHIP_CACHE_TAG } from '@/lib/auth/bike-park-staff';
 
 async function logActivity(
   organizationId: number | null | undefined,
@@ -43,6 +45,7 @@ export async function signOut() {
     const userWithOrg = await getUserWithOrganization(user.id);
     await logActivity(userWithOrg?.organizationId, user.id, ActivityType.SIGN_OUT);
   }
+  revalidateTag(WORKOS_ROLE_MEMBERSHIP_CACHE_TAG, 'max');
   await workOsSignOut();
 }
 

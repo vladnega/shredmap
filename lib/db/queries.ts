@@ -113,6 +113,7 @@ export async function listBikeParkMarkers() {
       latitude: bikeParks.latitude,
       longitude: bikeParks.longitude,
       ratingScore: bikeParks.ratingScore,
+      logoUrl: bikeParks.logoUrl,
       pinLogoUrl: bikeParks.pinLogoUrl,
     })
     .from(bikeParks);

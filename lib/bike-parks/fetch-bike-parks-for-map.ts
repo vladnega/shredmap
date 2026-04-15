@@ -3,6 +3,8 @@ export type BikeParkMapPoint = {
   name: string;
   lat: number;
   lng: number;
+  logoUrl?: string;
+  pinLogoUrl?: string;
 };
 
 export type FetchBikeParksForMapResult =
@@ -32,7 +34,16 @@ function parseBikeParksListResponse(
     const lat = Number(p.latitude);
     const lng = Number(p.longitude);
     if (Number.isNaN(lat) || Number.isNaN(lng)) continue;
-    parks.push({ id, name: String(p.name), lat, lng });
+    const logoUrl =
+      typeof p.logoUrl === 'string' && p.logoUrl.trim().length > 0
+        ? p.logoUrl.trim()
+        : undefined;
+    const pinLogoUrl =
+      typeof p.pinLogoUrl === 'string' && p.pinLogoUrl.trim().length > 0
+        ? p.pinLogoUrl.trim()
+        : undefined;
+
+    parks.push({ id, name: String(p.name), lat, lng, logoUrl, pinLogoUrl });
   }
 
   return { ok: true, parks };

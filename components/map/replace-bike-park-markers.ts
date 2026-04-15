@@ -10,6 +10,20 @@ type ReplaceBikeParkMarkersOptions = {
   mapFallbackZoom: number;
 };
 
+function buildMarkerIcon(
+  pinLogoUrl?: string,
+  logoUrl?: string,
+): google.maps.Icon | undefined {
+  const markerLogoUrl = pinLogoUrl ?? logoUrl;
+  if (!markerLogoUrl) return undefined;
+
+  return {
+    url: markerLogoUrl,
+    scaledSize: new google.maps.Size(40, 40),
+    anchor: new google.maps.Point(20, 20),
+  };
+}
+
 /**
  * Clears existing markers and attaches one Google Maps marker per park.
  * Keeps imperative map work out of the React component.
@@ -30,6 +44,7 @@ export function replaceBikeParkMarkersOnMap(
       position: { lat: p.lat, lng: p.lng },
       title: p.name,
       optimized: true,
+      icon: buildMarkerIcon(p.pinLogoUrl, p.logoUrl),
     });
 
     marker.addListener('click', () => {

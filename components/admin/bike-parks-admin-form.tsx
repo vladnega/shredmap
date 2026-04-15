@@ -1,14 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { BikeParkLocationPicker } from '@/components/admin/bike-park-location-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { BikePark } from '@/lib/db/schema';
-
-type MarkerRow = { id: string; name: string };
 
 function htmlToPlainText(html: string): string {
   if (typeof document === 'undefined') {
@@ -22,9 +20,14 @@ function htmlToPlainText(html: string): string {
 const defaultLat = 51.058;
 const defaultLng = -0.161;
 
-export function BikeParksAdminForm({ googleMapsApiKey }: { googleMapsApiKey: string }) {
-  const [markers, setMarkers] = useState<MarkerRow[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
+export function BikeParksAdminForm({
+  googleMapsApiKey,
+  initialParkId,
+}: {
+  googleMapsApiKey: string;
+  initialParkId?: string;
+}) {
+  const router = useRouter();
   const [editingId, setEditingId] = useState<string | ''>('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -35,35 +38,6 @@ export function BikeParksAdminForm({ googleMapsApiKey }: { googleMapsApiKey: str
   const [pinLogoUrl, setPinLogoUrl] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-
-  const loadMarkers = useCallback(async () => {
-    setLoadError(null);
-    try {
-      const res = await fetch('/api/bike-parks');
-      if (!res.ok) {
-        setLoadError(`Could not load parks (${res.status})`);
-        return;
-      }
-      const data: unknown = await res.json();
-      if (
-        typeof data !== 'object' ||
-        data === null ||
-        !('parks' in data) ||
-        !Array.isArray((data as { parks: unknown }).parks)
-      ) {
-        setLoadError('Unexpected parks list response');
-        return;
-      }
-      const rows = (data as { parks: MarkerRow[] }).parks;
-      setMarkers(rows);
-    } catch {
-      setLoadError('Could not load parks');
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadMarkers();
-  }, [loadMarkers]);
 
   const resetToCreate = useCallback(() => {
     setEditingId('');
@@ -112,8 +86,22 @@ export function BikeParksAdminForm({ googleMapsApiKey }: { googleMapsApiKey: str
     [resetToCreate],
   );
 
+  useEffect(() => {
+    if (!initialParkId) {
+      return;
+    }
+    if (initialParkId === editingId) {
+      return;
+    }
+    void loadParkForEdit(initialParkId);
+  }, [editingId, initialParkId, loadParkForEdit]);
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editingId) {
+      setMessage('Pick a bike park from Manage parks first.');
+      return;
+    }
     setBusy(true);
     setMessage(null);
     try {
@@ -127,44 +115,22 @@ export function BikeParksAdminForm({ googleMapsApiKey }: { googleMapsApiKey: str
         ...(pinLogoUrl.trim() ? { pinLogoUrl: pinLogoUrl.trim() } : {}),
       };
 
-      if (editingId) {
-        const res = await fetch(`/api/bike-parks/${editingId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          setMessage(
-            typeof err === 'object' && err && 'error' in err
-              ? String((err as { error: string }).error)
-              : `Update failed (${res.status})`,
-          );
-          setBusy(false);
-          return;
-        }
-        setMessage('Park updated.');
-      } else {
-        const res = await fetch('/api/bike-parks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          setMessage(
-            typeof err === 'object' && err && 'error' in err
-              ? String((err as { error: string }).error)
-              : `Create failed (${res.status})`,
-          );
-          setBusy(false);
-          return;
-        }
-        const created: BikePark = await res.json();
-        setMessage('Park created.');
-        setEditingId(created.id);
+      const res = await fetch(`/api/bike-parks/${editingId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setMessage(
+          typeof err === 'object' && err && 'error' in err
+            ? String((err as { error: string }).error)
+            : `Update failed (${res.status})`,
+        );
+        setBusy(false);
+        return;
       }
-      await loadMarkers();
+      setMessage('Park updated.');
     } catch {
       setMessage('Request failed');
     } finally {
@@ -185,8 +151,7 @@ export function BikeParksAdminForm({ googleMapsApiKey }: { googleMapsApiKey: str
         return;
       }
       setMessage('Park deleted.');
-      resetToCreate();
-      await loadMarkers();
+      router.push('/admin/bike-parks');
     } catch {
       setMessage('Delete failed');
     } finally {
@@ -194,51 +159,10 @@ export function BikeParksAdminForm({ googleMapsApiKey }: { googleMapsApiKey: str
     }
   };
 
+  const submitDisabled = busy || !editingId;
+
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-end gap-4">
-        <div className="min-w-[200px] flex-1 space-y-2">
-          <Label htmlFor="park-select" className="text-zinc-300">
-            Edit existing
-          </Label>
-          <select
-            id="park-select"
-            className="h-9 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white"
-            value={editingId}
-            onChange={(e) => void loadParkForEdit(e.target.value)}
-            disabled={busy}
-          >
-            <option value="">— New park —</option>
-            {markers.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          className="border-zinc-600 text-zinc-200"
-          onClick={() => {
-            resetToCreate();
-          }}
-          disabled={busy}
-        >
-          Clear form
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          className="border border-zinc-600"
-          onClick={() => void loadMarkers()}
-          disabled={busy}
-        >
-          Refresh list
-        </Button>
-      </div>
-
-      {loadError && <p className="text-sm text-red-400">{loadError}</p>}
       {message && <p className="text-sm text-emerald-400">{message}</p>}
 
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-6 max-w-2xl">
@@ -304,6 +228,8 @@ export function BikeParksAdminForm({ googleMapsApiKey }: { googleMapsApiKey: str
           googleMapsApiKey={googleMapsApiKey}
           latitude={latitude}
           longitude={longitude}
+          markerTitle={name}
+          markerLogoUrl={pinLogoUrl || logoUrl}
           onLocationChange={(lat, lng) => {
             setLatitude(lat);
             setLongitude(lng);
@@ -355,10 +281,10 @@ export function BikeParksAdminForm({ googleMapsApiKey }: { googleMapsApiKey: str
         <div className="flex flex-wrap gap-3">
           <Button
             type="submit"
-            disabled={busy}
+            disabled={submitDisabled}
             className="bg-orange-600 text-white hover:bg-orange-500"
           >
-            {editingId ? 'Save changes' : 'Create park'}
+            Save changes
           </Button>
           {editingId ? (
             <Button
@@ -370,11 +296,6 @@ export function BikeParksAdminForm({ googleMapsApiKey }: { googleMapsApiKey: str
               Delete park
             </Button>
           ) : null}
-          <Button type="button" variant="ghost" asChild>
-            <Link href="/" className="text-zinc-400">
-              Back to map
-            </Link>
-          </Button>
         </div>
       </form>
     </div>
