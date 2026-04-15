@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { LogOut, Map, Menu, Mountain, ShieldCheck, UserCircle2 } from 'lucide-react';
+import { LogOut, Map, MapPin, Menu, Mountain, ShieldCheck, UserCircle2 } from 'lucide-react';
+import useSWR from 'swr';
 import { useAppUser } from '@/lib/hooks/use-app-user';
+import { BIKE_PARK_STAFF_ROLE_SLUGS } from '@/lib/auth/bike-park-staff-roles';
 import { PublicAuthActions } from '@/components/auth/public-auth-actions';
 import { MAP_UI_LAYER_Z } from '@/lib/map/map-ui-layers';
 import {
@@ -18,7 +20,28 @@ import { signOut } from '@/app/(auth)/actions';
 import { useRouter } from 'next/navigation';
 import { mutate } from 'swr';
 
-function LoggedInMapMenu({ userName }: { userName: string | null }) {
+type WorkOsRolesPayload = { roles: string[] };
+
+function rolesFetcher(url: string): Promise<WorkOsRolesPayload> {
+  return fetch(url).then((r) => {
+    if (!r.ok) throw new Error(String(r.status));
+    return r.json() as Promise<WorkOsRolesPayload>;
+  });
+}
+
+function isBikeParkStaffFromRoles(roles: string[] | undefined): boolean {
+  if (!roles?.length) return false;
+  const set = new Set(roles);
+  return BIKE_PARK_STAFF_ROLE_SLUGS.some((slug) => set.has(slug));
+}
+
+function LoggedInMapMenu({
+  userName,
+  showBikeParkAdmin,
+}: {
+  userName: string | null;
+  showBikeParkAdmin: boolean;
+}) {
   const router = useRouter();
 
   async function handleSignOut() {
@@ -67,6 +90,14 @@ function LoggedInMapMenu({ userName }: { userName: string | null }) {
             <span>Admin</span>
           </Link>
         </DropdownMenuItem>
+        {showBikeParkAdmin ? (
+          <DropdownMenuItem className="rounded-xl px-2 py-2 text-zinc-100 focus:bg-zinc-800 focus:text-white">
+            <Link href="/admin/bike-parks" className="flex w-full items-center gap-2">
+              <MapPin className="h-4 w-4 text-orange-400" />
+              <span>Manage parks</span>
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuSeparator className="bg-zinc-700/80" />
         <DropdownMenuItem
           onSelect={() => {
@@ -86,6 +117,12 @@ function LoggedInMapMenu({ userName }: { userName: string | null }) {
 
 export function MapChrome() {
   const { data: user, isLoading } = useAppUser();
+  const { data: roleData } = useSWR<WorkOsRolesPayload>(
+    user ? '/api/workos/roles' : null,
+    rolesFetcher,
+    { revalidateOnFocus: false },
+  );
+  const showBikeParkAdmin = isBikeParkStaffFromRoles(roleData?.roles);
 
   return (
     <header
@@ -106,7 +143,7 @@ export function MapChrome() {
             <div className="h-9 w-20 animate-pulse rounded-full bg-zinc-800" />
           </div>
         ) : user ? (
-          <LoggedInMapMenu userName={user.name} />
+          <LoggedInMapMenu userName={user.name} showBikeParkAdmin={showBikeParkAdmin} />
         ) : (
           <PublicAuthActions variant="map" />
         )}

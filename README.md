@@ -64,6 +64,8 @@ Optional:
 | `pnpm db:migrate` | Apply Drizzle migrations |
 | `pnpm db:seed`  | Seed user, org, catalog    |
 | `pnpm db:studio`| Drizzle Studio             |
+| `pnpm test`   | Vitest unit tests          |
+| `pnpm test:e2e` | Playwright (see `docs/shredmap.md`) |
 
 ## Deploy (e.g. Vercel)
 

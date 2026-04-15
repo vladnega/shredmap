@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings2, ShieldCheck, Map } from 'lucide-react';
+import { Settings2, ShieldCheck, Map, MapPin } from 'lucide-react';
 
 export default function AdminPage() {
   return (
@@ -20,12 +20,8 @@ export default function AdminPage() {
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-zinc-300">
           <p>
-            Restrict this route to staff roles before exposing park management
-            tools in production.
-          </p>
-          <p>
-            Add write operations behind authenticated handlers (for example,
-            moderation or featured park curation).
+            Park writes require WorkOS roles <strong className="text-zinc-100">admin</strong> or{' '}
+            <strong className="text-zinc-100">moderator</strong> (enforced on every API route).
           </p>
         </CardContent>
       </Card>
@@ -34,14 +30,14 @@ export default function AdminPage() {
         <Card className="border-zinc-800 bg-zinc-900/70 text-zinc-100">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Map className="h-4 w-4 text-orange-400" />
-              Park data
+              <MapPin className="h-4 w-4 text-orange-400" />
+              Manage bike parks
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-zinc-300">
-            <p>Use the map to validate park listings and spot missing entries.</p>
+            <p>Add, edit, or delete parks (staff only).</p>
             <Button asChild className="bg-orange-500 text-white hover:bg-orange-600">
-              <Link href="/">Open map</Link>
+              <Link href="/admin/bike-parks">Open bike park editor</Link>
             </Button>
           </CardContent>
         </Card>
@@ -49,19 +45,27 @@ export default function AdminPage() {
         <Card className="border-zinc-800 bg-zinc-900/70 text-zinc-100">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
+              <Map className="h-4 w-4 text-orange-400" />
+              Public map
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-zinc-300">
+            <p>Use the map to validate listings and spot missing entries.</p>
+            <Button asChild variant="outline" className="border-zinc-600 text-zinc-200">
+              <Link href="/">Open map</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-zinc-800 bg-zinc-900/70 text-zinc-100 sm:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
               <Settings2 className="h-4 w-4 text-orange-400" />
-              Implementation notes
+              More
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-zinc-300">
-            <p>
-              Build admin APIs under <code className="text-xs">/api/admin/*</code>{' '}
-              and enforce role checks server-side.
-            </p>
-            <p>
-              Add workflows for park edits, review moderation, and publication
-              status changes.
-            </p>
+            <p>Review moderation and other admin workflows can extend from here.</p>
           </CardContent>
         </Card>
       </div>

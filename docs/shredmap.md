@@ -12,7 +12,8 @@
 - **Markers:** Loaded from `GET /api/bike-parks` via `lib/bike-parks/fetch-bike-parks-for-map.ts`, which validates the JSON and passes points to `replaceBikeParkMarkersOnMap` (`components/map/replace-bike-park-markers.ts`). Requests respect **abort signals** so rapid navigation or remounts do not apply stale markers.
 - **Selection:** Choosing a marker sets a selected park id; details are fetched from `GET /api/bike-parks/[id]` (`components/map/shred-map.tsx`).
 - **Layout:** **Mobile-first** — narrow viewports use a **full-screen detail panel**; **desktop** uses a **side panel** so the map stays visible (`park-detail-panel.tsx`, `shred-map.tsx`).
-- **Chrome:** Top bar with branding and auth/navigation (`map-chrome.tsx`). Signed-out users see sign-in/sign-up actions; signed-in users get a themed hamburger menu with quick links for **Map**, **Account**, **Admin**, and **Sign out**. **`/sign-in`** and **`/sign-up`** are server routes that immediately redirect to WorkOS AuthKit via `getSignInUrl` / `getSignUpUrl` (`lib/auth/workos-redirect.ts`; optional `?redirect=` for return path).
+- **Chrome:** Top bar with branding and auth/navigation (`map-chrome.tsx`). Signed-out users see sign-in/sign-up actions; signed-in users get a themed hamburger menu with quick links for **Map**, **Account**, **Admin**, optional **Manage parks** (when WorkOS roles include `admin` or `moderator`), and **Sign out**. **`/sign-in`** and **`/sign-up`** are server routes that immediately redirect to WorkOS AuthKit via `getSignInUrl` / `getSignUpUrl` (`lib/auth/workos-redirect.ts`; optional `?redirect=` for return path).
+- **Park detail footer:** Signed-out users see a prompt to sign in for community features; signed-in users see account messaging; users with staff roles also get a **Manage bike parks** link (`park-detail-panel.tsx`).
 
 ### Authentication
 
@@ -28,12 +29,86 @@ The repo still includes **marketing**, **catalog** (`/items`), **dashboard**, **
 
 ## API routes (bike parks)
 
-| Method | Path | Role |
-|--------|------|------|
-| `GET` | `/api/bike-parks` | Returns `{ parks }` with minimal fields for map markers (`listBikeParkMarkers` in `lib/db/queries.ts`). |
-| `GET` | `/api/bike-parks/[id]` | Returns a full `bike_parks` row for the detail panel. |
+| Method | Path | Who | Notes |
+|--------|------|-----|-------|
+| `GET` | `/api/bike-parks` | Public | `{ parks }` — minimal fields for map markers (`listBikeParkMarkers`). |
+| `GET` | `/api/bike-parks/[id]` | Public | Full `bike_parks` row for the detail panel. |
+| `POST` | `/api/bike-parks` | Staff | Create park; JSON body validated with Zod (`lib/bike-parks/api-schemas.ts`). Server assigns UUID `id`. |
+| `PATCH` | `/api/bike-parks/[id]` | Staff | Partial update; at least one field required. |
+| `DELETE` | `/api/bike-parks/[id]` | Staff | Deletes row; `park_reviews` cascade. |
+
+**Staff** means a signed-in WorkOS user whose role slugs include **`admin`** or **`moderator`** (from the AuthKit session and organization memberships — same aggregation as `/api/workos/roles`). Enforced in `requireBikeParkStaff()` (`lib/auth/bike-park-staff.ts`) on every mutating handler. Missing session → **401**; signed in but not staff → **403**.
+
+### Staff UI
+
+- **`/admin/bike-parks`** — form to create/edit/delete parks (RSC checks `isBikeParkStaffMember()`; API remains authoritative).
+- Moderator **example** for manual QA: [Bull Track Bike Park](https://bulltrackbikepark.co.uk/) — name e.g. `Bull Track Bike Park`, website `https://bulltrackbikepark.co.uk/`, short description, coordinates near Crowborough (~`51.058`, `-0.161`).
+
+### Diagrams
+
+```mermaid
+flowchart LR
+  subgraph publicFlow [PublicRead]
+    B[Browser]
+    G1[GET api bike-parks]
+    G2[GET api bike-parks id]
+    DB[(Postgres)]
+  end
+  B --> G1 --> DB
+  B --> G2 --> DB
+```
+
+```mermaid
+flowchart LR
+  subgraph staffWrite [StaffWrite]
+    BF[BrowserForm]
+    M[POST PATCH DELETE]
+    Gate[requireBikeParkStaff]
+    W[WorkOS roles]
+    DB2[(Postgres)]
+  end
+  BF --> M --> Gate --> W
+  Gate --> DB2
+```
+
+```mermaid
+sequenceDiagram
+  participant R as RouteHandler
+  participant A as withAuth
+  participant WM as WorkOS listMemberships
+  participant Z as Zod
+  participant D as Drizzle
+  participant P as Postgres
+  R->>A: session
+  A-->>R: user or 401
+  R->>WM: userId
+  WM-->>R: membership role slugs
+  R->>R: admin or moderator
+  alt not staff
+    R-->>R: 403
+  else staff
+    R->>Z: parse body
+    Z-->>R: data
+    R->>D: insert update delete
+    D->>P: SQL
+  end
+```
+
+```mermaid
+stateDiagram-v2
+  [*] --> SignedOut
+  SignedOut --> SignedIn: AuthKit session
+  SignedIn --> Staff: roles include admin or moderator
+  SignedIn --> NonStaff: otherwise
+  note right of Staff: Manage bike parks link
+```
 
 Other JSON routes (`/api/user`, `/api/organization`, `/api/workos/roles`, `/api/items`, `/api/ai/chat`, `/api/webhooks`, `/api/admin/items`) follow the boilerplate; protect or extend as needed.
+
+### E2E / Playwright
+
+- **`pnpm test:e2e`** runs Playwright (`e2e/`, video on; output under `test-results/`).
+- Optional password-auth bootstrap: set **`ENABLE_E2E_TEST_AUTH=1`**, **`TEST_APP_USERNAME`** (email), **`TEST_APP_SECRET`** (password), run the app, then **`POST /api/e2e/session`** (used by the test `beforeAll`) to mint an AuthKit cookie via `authenticateWithPassword`. **Do not commit secrets.** The test creates and deletes the Bull Track sample on `/admin/bike-parks`.
 
 ---
 
@@ -75,6 +150,7 @@ See **`.env.example`** in the repo root. Highlights:
 | `BASE_URL` | Canonical URL (links, callbacks) |
 | `WORKOS_API_KEY`, `WORKOS_CLIENT_ID`, `WORKOS_COOKIE_PASSWORD`, `NEXT_PUBLIC_WORKOS_REDIRECT_URI` | WorkOS AuthKit (required; must match dashboard; redirect URI typically `…/callback`) |
 | `OPENAI_API_KEY`, `OPENAI_MODEL` | Optional — `/chat` and `/api/ai/chat` |
+| `ENABLE_E2E_TEST_AUTH`, `TEST_APP_USERNAME`, `TEST_APP_SECRET` | Optional — Playwright + `/api/e2e/session` (see E2E section) |
 
 ### Vercel: “Development” vs hosted deploys
 
@@ -106,7 +182,8 @@ Until that custom environment exists, use **`vercel deploy --target preview`** (
 |------|------|
 | Map UI | `components/map/` — `shred-map.tsx`, `park-detail-panel.tsx`, `map-chrome.tsx`, `home-map-loader.tsx`, `replace-bike-park-markers.ts` |
 | Client fetch helpers | `lib/bike-parks/fetch-bike-parks-for-map.ts` |
-| DB queries | `lib/db/queries.ts` — `listBikeParkMarkers`, `getBikeParkById`, user/org helpers |
+| DB queries | `lib/db/queries.ts` — bike park reads/writes, user/org helpers |
+| Staff bike parks | `lib/auth/bike-park-staff.ts`, `lib/auth/bike-park-staff-roles.ts`, `app/(app)/admin/bike-parks/` |
 | Schema | `lib/db/schema.ts` — `bikeParks`, `parkReviews`, `users` |
 | WorkOS sync | `lib/auth/sync-workos-user.ts`, `lib/auth/workos-env.ts` |
 | Request proxy (WorkOS) | `proxy.ts` — `authkitProxy` |
@@ -118,7 +195,6 @@ Until that custom environment exists, use **`vercel deploy --target preview`** (
 Document these in this file when they ship:
 
 - Review submission (authenticated) and listing on park detail
-- Moderator-only create/update for `bike_parks`
 
 ---
 

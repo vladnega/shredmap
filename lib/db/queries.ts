@@ -1,4 +1,4 @@
-import { desc, and, eq, isNull } from 'drizzle-orm';
+import { desc, and, eq, isNull, sql } from 'drizzle-orm';
 import { db } from './drizzle';
 import {
   activityLogs,
@@ -6,6 +6,7 @@ import {
   catalogItems,
   organizationMembers,
   users,
+  type NewBikePark,
 } from './schema';
 import { withAuth } from '@workos-inc/authkit-nextjs';
 
@@ -124,4 +125,40 @@ export async function getBikeParkById(id: string) {
     .where(eq(bikeParks.id, id))
     .limit(1);
   return rows[0] ?? null;
+}
+
+export async function insertBikePark(row: NewBikePark) {
+  const inserted = await db.insert(bikeParks).values(row).returning();
+  return inserted[0] ?? null;
+}
+
+export async function updateBikeParkById(
+  id: string,
+  patch: Partial<
+    Pick<
+      NewBikePark,
+      | 'name'
+      | 'description'
+      | 'latitude'
+      | 'longitude'
+      | 'logoUrl'
+      | 'pinLogoUrl'
+      | 'primaryCtaUrl'
+    >
+  >,
+) {
+  const updated = await db
+    .update(bikeParks)
+    .set({
+      ...patch,
+      updatedAt: sql`now()`,
+    })
+    .where(eq(bikeParks.id, id))
+    .returning();
+  return updated[0] ?? null;
+}
+
+export async function deleteBikeParkById(id: string) {
+  const deleted = await db.delete(bikeParks).where(eq(bikeParks.id, id)).returning({ id: bikeParks.id });
+  return deleted[0] ?? null;
 }
