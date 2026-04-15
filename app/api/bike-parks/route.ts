@@ -3,6 +3,7 @@ import {
   bikeParkCreateBodySchema,
   escapeHtmlForParkDescription,
 } from '@/lib/bike-parks/api-schemas';
+import { selectedFacilitiesToAmenities } from '@/lib/bike-parks/facilities';
 import { requireBikeParkStaff } from '@/lib/auth/bike-park-staff';
 import { insertBikePark, listBikeParkMarkers } from '@/lib/db/queries';
 
@@ -32,7 +33,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const { name, description, latitude, longitude, website, logoUrl, pinLogoUrl } =
+  const {
+    name,
+    description,
+    latitude,
+    longitude,
+    website,
+    logoUrl,
+    pinLogoUrl,
+    facilities,
+  } =
     parsed.data;
 
   const row = await insertBikePark({
@@ -44,6 +54,7 @@ export async function POST(request: Request) {
     primaryCtaUrl: website ?? null,
     logoUrl: logoUrl ?? null,
     pinLogoUrl: pinLogoUrl ?? null,
+    amenities: selectedFacilitiesToAmenities(facilities),
   });
 
   if (!row) {

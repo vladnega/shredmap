@@ -34,8 +34,8 @@ The repo still includes **marketing**, **catalog** (`/items`), **dashboard**, **
 |--------|------|-----|-------|
 | `GET` | `/api/bike-parks` | Public | `{ parks }` — minimal fields for map markers (`id`, `name`, `latitude`, `longitude`, optional `pinLogoUrl` / `logoUrl`). |
 | `GET` | `/api/bike-parks/[id]` | Public | Full `bike_parks` row for the detail panel. |
-| `POST` | `/api/bike-parks` | Staff | Create park; JSON body validated with Zod (`lib/bike-parks/api-schemas.ts`). Server assigns UUID `id`. |
-| `PATCH` | `/api/bike-parks/[id]` | Staff | Partial update; at least one field required. |
+| `POST` | `/api/bike-parks` | Staff | Create park; JSON body validated with Zod (`lib/bike-parks/api-schemas.ts`). Includes `facilities` as a predefined list of allowed slugs (stored as `amenities`). Server assigns UUID `id`. |
+| `PATCH` | `/api/bike-parks/[id]` | Staff | Partial update; at least one field required. Supports updating `facilities` from the same predefined slug list. |
 | `DELETE` | `/api/bike-parks/[id]` | Staff | Deletes row; `park_reviews` cascade. |
 
 **Staff** means a signed-in WorkOS user whose role slugs include **`admin`** or **`moderator`** (from the AuthKit session and organization memberships — same aggregation as `/api/workos/roles`). Enforced in `requireBikeParkStaff()` (`lib/auth/bike-park-staff.ts`) on every mutating handler. Membership role-slug lookups are cached per WorkOS user (TTL configured in `lib/auth/bike-park-staff.ts`) to reduce repeat WorkOS latency during route transitions and staff actions, and the cache tag is explicitly invalidated during sign-out. Missing session → **401**; signed in but not staff → **403**.
@@ -43,7 +43,7 @@ The repo still includes **marketing**, **catalog** (`/items`), **dashboard**, **
 ### Staff UI
 
 - **`/admin/bike-parks`** — staff-only directory with instant name search and infinite scrolling, sorted alphabetically; selecting a park opens its editor.
-- **`/admin/bike-parks/[parkId]`** — per-park editor route for updating/deleting a specific listing, used by both the manage list and map side panel.
+- **`/admin/bike-parks/[parkId]`** — per-park editor route for updating/deleting a specific listing, used by both the manage list and map side panel. Facilities are edited as selectable predefined tags (no freeform entry).
 - Moderator **example** for manual QA: [Bull Track Bike Park](https://bulltrackbikepark.co.uk/) — name e.g. `Bull Track Bike Park`, website `https://bulltrackbikepark.co.uk/`, short description, coordinates near Crowborough (~`51.058`, `-0.161`).
 
 ### Diagrams
@@ -122,7 +122,7 @@ Table `bike_parks` (see `lib/db/schema.ts`) stores:
 - Presentation: `description`, `logoUrl`, `pinLogoUrl`, `galleryImageUrls`
 - Trail stats: `trailCount`, `totalTrailLengthKm`
 - Ratings: `ratingScore`, `ratingVoteCount`
-- Facilities: `amenities` (JSON object of booleans)
+- Facilities: `amenities` (JSON object of booleans). Staff editing uses a controlled predefined vocabulary from `lib/bike-parks/facilities.ts`.
 - Links and business: `primaryCtaUrl`, `primaryCtaType`, `payment`, `status`
 - **Opening hours:** `openingHours` (JSON)
 - **Provenance:** `sourceUrl`

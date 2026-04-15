@@ -9,6 +9,10 @@ import type { BikePark } from '@/lib/db/schema';
 import { BIKE_PARK_STAFF_ROLE_SLUGS } from '@/lib/auth/bike-park-staff-roles';
 import { useAppUser } from '@/lib/hooks/use-app-user';
 import { MAP_UI_LAYER_Z } from '@/lib/map/map-ui-layers';
+import {
+  BIKE_PARK_FACILITY_LABELS,
+  isBikeParkFacilitySlug,
+} from '@/lib/bike-parks/facilities';
 
 type WorkOsRolesPayload = { roles: string[] };
 
@@ -25,29 +29,16 @@ function isBikeParkStaffFromRoles(roles: string[] | undefined): boolean {
   return BIKE_PARK_STAFF_ROLE_SLUGS.some((slug) => set.has(slug));
 }
 
-const AMENITY_LABELS: Record<string, string> = {
-  bike_rental: 'Bike rental',
-  bike_mechanic: 'Mechanic',
-  food_drink: 'Food & drink',
-  toilets: 'Toilets',
-  showers: 'Showers',
-  bike_wash: 'Bike wash',
-  first_aid: 'First aid',
-  coaching: 'Coaching',
-  parking: 'Parking',
-  uplift_chair: 'Uplift (chair)',
-  uplift_gondola: 'Uplift (gondola)',
-  uplift_shuttle: 'Uplift (shuttle)',
-  ebike_allowed: 'E-bike allowed',
-  accommodation: 'Accommodation',
-  shop: 'Shop',
-};
-
 function amenityList(amenities: Record<string, boolean> | null | undefined) {
   if (!amenities) return [];
-  return Object.entries(amenities)
-    .filter(([, v]) => v)
-    .map(([k]) => AMENITY_LABELS[k] ?? k.replace(/_/g, ' '));
+  return Object.entries(amenities).flatMap(([key, enabled]) => {
+    if (!enabled) return [];
+    return [
+      isBikeParkFacilitySlug(key)
+        ? BIKE_PARK_FACILITY_LABELS[key]
+        : key.replace(/_/g, ' '),
+    ];
+  });
 }
 
 export function ParkDetailPanel({

@@ -2,6 +2,7 @@ import {
   bikeParkPatchBodySchema,
   escapeHtmlForParkDescription,
 } from '@/lib/bike-parks/api-schemas';
+import { selectedFacilitiesToAmenities } from '@/lib/bike-parks/facilities';
 import { requireBikeParkStaff } from '@/lib/auth/bike-park-staff';
 import {
   deleteBikeParkById,
@@ -63,6 +64,9 @@ export async function PATCH(
     ...(data.website !== undefined ? { primaryCtaUrl: data.website ?? null } : {}),
     ...(data.logoUrl !== undefined ? { logoUrl: data.logoUrl ?? null } : {}),
     ...(data.pinLogoUrl !== undefined ? { pinLogoUrl: data.pinLogoUrl ?? null } : {}),
+    ...(data.facilities !== undefined
+      ? { amenities: selectedFacilitiesToAmenities(data.facilities) }
+      : {}),
   });
 
   if (!row) {

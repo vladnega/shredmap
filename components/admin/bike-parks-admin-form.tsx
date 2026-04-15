@@ -1,12 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BikeParkLocationPicker } from '@/components/admin/bike-park-location-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { BikePark } from '@/lib/db/schema';
+import {
+  amenitiesToSelectedFacilities,
+  BIKE_PARK_FACILITY_OPTIONS,
+  type BikeParkFacilitySlug,
+} from '@/lib/bike-parks/facilities';
 
 function htmlToPlainText(html: string): string {
   if (typeof document === 'undefined') {
@@ -36,6 +41,7 @@ export function BikeParksAdminForm({
   const [website, setWebsite] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [pinLogoUrl, setPinLogoUrl] = useState('');
+  const [facilities, setFacilities] = useState<BikeParkFacilitySlug[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -48,6 +54,7 @@ export function BikeParksAdminForm({
     setWebsite('');
     setLogoUrl('');
     setPinLogoUrl('');
+    setFacilities([]);
     setMessage(null);
   }, []);
 
@@ -77,6 +84,7 @@ export function BikeParksAdminForm({
         setWebsite(park.primaryCtaUrl ?? '');
         setLogoUrl(park.logoUrl ?? '');
         setPinLogoUrl(park.pinLogoUrl ?? '');
+        setFacilities(amenitiesToSelectedFacilities(park.amenities));
       } catch {
         setMessage('Could not load park');
       } finally {
@@ -105,14 +113,20 @@ export function BikeParksAdminForm({
     setBusy(true);
     setMessage(null);
     try {
+      const trimmedName = name.trim();
+      const trimmedDescription = description.trim();
+      const trimmedWebsite = website.trim();
+      const trimmedLogoUrl = logoUrl.trim();
+      const trimmedPinLogoUrl = pinLogoUrl.trim();
       const body = {
-        name: name.trim(),
-        description: description.trim(),
+        name: trimmedName,
+        description: trimmedDescription,
         latitude,
         longitude,
-        ...(website.trim() ? { website: website.trim() } : {}),
-        ...(logoUrl.trim() ? { logoUrl: logoUrl.trim() } : {}),
-        ...(pinLogoUrl.trim() ? { pinLogoUrl: pinLogoUrl.trim() } : {}),
+        ...(trimmedWebsite ? { website: trimmedWebsite } : {}),
+        ...(trimmedLogoUrl ? { logoUrl: trimmedLogoUrl } : {}),
+        ...(trimmedPinLogoUrl ? { pinLogoUrl: trimmedPinLogoUrl } : {}),
+        facilities,
       };
 
       const res = await fetch(`/api/bike-parks/${editingId}`, {
@@ -160,6 +174,18 @@ export function BikeParksAdminForm({
   };
 
   const submitDisabled = busy || !editingId;
+  const facilitySet = useMemo(() => new Set(facilities), [facilities]);
+  const toggleFacility = useCallback((slug: BikeParkFacilitySlug) => {
+    setFacilities((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) {
+        next.delete(slug);
+      } else {
+        next.add(slug);
+      }
+      return Array.from(next);
+    });
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -276,6 +302,33 @@ export function BikeParksAdminForm({
             placeholder="https://"
             className="border-zinc-700 bg-zinc-900 text-white"
           />
+        </div>
+
+        <div className="space-y-3">
+          <Label className="text-zinc-300">Facilities (predefined)</Label>
+          <p className="text-xs text-zinc-500">
+            Select all facilities that apply. Only these predefined tags are allowed.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {BIKE_PARK_FACILITY_OPTIONS.map((facility) => {
+              const selected = facilitySet.has(facility.slug);
+              return (
+                <button
+                  key={facility.slug}
+                  type="button"
+                  onClick={() => toggleFacility(facility.slug)}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                    selected
+                      ? 'border-orange-500/40 bg-orange-500/20 text-orange-100'
+                      : 'border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-500'
+                  }`}
+                  aria-pressed={selected}
+                >
+                  {facility.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-3">

@@ -145,6 +145,7 @@ export async function updateBikeParkById(
       | 'logoUrl'
       | 'pinLogoUrl'
       | 'primaryCtaUrl'
+      | 'amenities'
     >
   >,
 ) {

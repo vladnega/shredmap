@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BIKE_PARK_FACILITY_SLUGS } from '@/lib/bike-parks/facilities';
 
 function isHttpUrl(value: string): boolean {
   try {
@@ -34,6 +35,11 @@ const patchOptionalUrl = z
     'Must be a valid http(s) URL',
   );
 
+const facilitiesSchema = z
+  .array(z.enum(BIKE_PARK_FACILITY_SLUGS))
+  .max(BIKE_PARK_FACILITY_SLUGS.length)
+  .transform((values) => Array.from(new Set(values)));
+
 /** Escape minimal HTML for user-provided description shown with dangerouslySetInnerHTML. */
 export function escapeHtmlForParkDescription(text: string): string {
   const escaped = text
@@ -56,6 +62,7 @@ export const bikeParkCreateBodySchema = z.object({
   website: optionalUrl.optional(),
   logoUrl: optionalUrl.optional(),
   pinLogoUrl: optionalUrl.optional(),
+  facilities: facilitiesSchema.default([]),
 });
 
 export type BikeParkCreateBody = z.infer<typeof bikeParkCreateBodySchema>;
@@ -77,6 +84,7 @@ export const bikeParkPatchBodySchema = z
     website: patchOptionalUrl,
     logoUrl: patchOptionalUrl,
     pinLogoUrl: patchOptionalUrl,
+    facilities: facilitiesSchema.optional(),
   })
   .refine(
     (obj) =>
@@ -86,7 +94,8 @@ export const bikeParkPatchBodySchema = z
       obj.longitude !== undefined ||
       obj.website !== undefined ||
       obj.logoUrl !== undefined ||
-      obj.pinLogoUrl !== undefined,
+      obj.pinLogoUrl !== undefined ||
+      obj.facilities !== undefined,
     { message: 'At least one field is required' },
   );
 
