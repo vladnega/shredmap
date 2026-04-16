@@ -106,6 +106,9 @@ export const bikeParkPatchBodySchema = z
       .optional(),
     website: patchOptionalUrl,
     buyTicketUrl: patchOptionalUrl,
+    payment: z
+      .union([z.literal('paid'), z.literal('free'), z.null(), z.undefined()])
+      .optional(),
     logoUrl: patchOptionalUrl,
     pinLogoUrl: patchOptionalUrl,
     facilities: facilitiesSchema.optional(),
@@ -120,6 +123,7 @@ export const bikeParkPatchBodySchema = z
       obj.longitude !== undefined ||
       obj.website !== undefined ||
       obj.buyTicketUrl !== undefined ||
+      obj.payment !== undefined ||
       obj.logoUrl !== undefined ||
       obj.pinLogoUrl !== undefined ||
       obj.facilities !== undefined ||
