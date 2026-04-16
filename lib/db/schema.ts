@@ -9,6 +9,7 @@ import {
   uuid,
   jsonb,
   smallint,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import type { TrailDifficultyCounts } from '@/lib/bike-parks/trail-difficulties';
@@ -106,18 +107,27 @@ export const bikeParks = pgTable('bike_parks', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-export const parkReviews = pgTable('park_reviews', {
-  id: serial('id').primaryKey(),
-  bikeParkId: uuid('bike_park_id')
-    .notNull()
-    .references(() => bikeParks.id, { onDelete: 'cascade' }),
-  userId: integer('user_id')
-    .notNull()
-    .references(() => users.id),
-  rating: smallint('rating').notNull(),
-  body: text('body').notNull(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+export const parkReviews = pgTable(
+  'park_reviews',
+  {
+    id: serial('id').primaryKey(),
+    bikeParkId: uuid('bike_park_id')
+      .notNull()
+      .references(() => bikeParks.id, { onDelete: 'cascade' }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id),
+    rating: smallint('rating').notNull(),
+    body: text('body').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    bikeParkUserUnique: uniqueIndex('park_reviews_bike_park_user_unique').on(
+      table.bikeParkId,
+      table.userId,
+    ),
+  }),
+);
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   organizationMembers: many(organizationMembers),

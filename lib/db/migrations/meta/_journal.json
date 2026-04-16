@@ -50,6 +50,20 @@
       "when": 1776336000000,
       "tag": "0006_drop_bike_park_total_trail_length",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1776400000000,
+      "tag": "0007_review_uniqueness_and_updates",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1776419000000,
+      "tag": "0008_repair_park_reviews_unique_index",
+      "breakpoints": true
     }
   ]
 }

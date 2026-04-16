@@ -1,3 +1,12 @@
+# Shredmap docs moved
+
+The Shredmap documentation is now organized as a feature-based wiki.
+
+- Start here: [`docs/shredmap/index.md`](./shredmap/index.md)
+- Feature pages live in: `docs/shredmap/features/`
+- Deep reference lives in: `docs/shredmap/reference/`
+
+Use this file as a compatibility entry point only. New or updated feature documentation should be added to the relevant wiki page(s), not this file.
 # Shredmap — application documentation
 
 **Shredmap** is a community-oriented site for discovering **UK mountain bike parks**. The main experience is a **full-screen Google Map** with database-backed markers; users can browse **without signing in**. The stack is **Next.js (App Router)**, **Postgres**, **Drizzle ORM**, **Tailwind CSS**, and **WorkOS AuthKit** (required — see `assertWorkOsConfigured()` in `lib/auth/workos-env.ts`).
@@ -38,8 +47,12 @@ The repo still includes **marketing**, **catalog** (`/items`), **dashboard**, **
 | `POST` | `/api/bike-parks` | Staff | Create park; JSON body validated with Zod (`lib/bike-parks/api-schemas.ts`). Includes `facilities` as a predefined list of allowed slugs (stored as `amenities`). Server assigns UUID `id`. |
 | `PATCH` | `/api/bike-parks/[id]` | Staff | Partial update; at least one field required. Supports updating `facilities` from the same predefined slug list. |
 | `DELETE` | `/api/bike-parks/[id]` | Staff | Deletes row; `park_reviews` cascade. |
+| `GET` | `/api/bike-parks/[id]/reviews` | Public | Returns `{ summary, items, nextCursor, viewerReview }`; supports query params `limit` (max 25), optional `cursor`, and optional `rating` filter. |
+| `POST` | `/api/bike-parks/[id]/reviews` | Member/Admin/Moderator | Upserts one review per signed-in user per park (`rating` 1-5 + `description`). Missing session → `401`; signed in without allowed role → `403`. |
 
 **Staff** means a signed-in WorkOS user whose role slugs include **`admin`** or **`moderator`** (from the AuthKit session and organization memberships — same aggregation as `/api/workos/roles`). Enforced in `requireBikeParkStaff()` (`lib/auth/bike-park-staff.ts`) on every mutating handler. Membership role-slug lookups are cached per WorkOS user (TTL configured in `lib/auth/bike-park-staff.ts`) to reduce repeat WorkOS latency during route transitions and staff actions, and the cache tag is explicitly invalidated during sign-out. Missing session → **401**; signed in but not staff → **403**.
+
+**Review writers** must be signed in and have WorkOS role slug **`member`**, **`admin`**, or **`moderator`**. Enforced in `requireBikeParkReviewAuthor()` (`lib/auth/bike-park-review-auth.ts`). Review writes are stored as one row per user+park via a DB unique index and `ON CONFLICT DO UPDATE` upsert logic.
 
 ### Staff UI
 
@@ -122,13 +135,19 @@ Table `bike_parks` (see `lib/db/schema.ts`) stores:
 - Identity and position: `id` (UUID), `name`, `latitude`, `longitude`
 - Presentation: `description`, `logoUrl`, `pinLogoUrl`, `galleryImageUrls`
 - Trail stats: `trailDifficultyCounts` (JSON with `green`, `blue`, `red`, `black`, `doubleBlack`)
-- Ratings: `ratingScore`, `ratingVoteCount`
+- Ratings fields on `bike_parks` (`ratingScore`, `ratingVoteCount`) are legacy seed values; public review summaries now come from live `park_reviews` aggregates.
 - Facilities: `amenities` (JSON object of booleans). Staff editing uses a controlled predefined vocabulary from `lib/bike-parks/facilities.ts`.
 - Links and business: `primaryCtaUrl`, `buyTicketUrl`, `primaryCtaType`, `payment`, `status`
 - **Opening hours:** `openingHours` (JSON)
 - Timestamps: `createdAt`, `updatedAt`
 
-`park_reviews` links `bike_parks` to `users` with `rating` and `body` — intended for logged-in reviews; UI/API may be incomplete until built out.
+`park_reviews` links `bike_parks` to `users` with:
+
+- `rating` (1-5), `body`
+- `createdAt`
+- unique `(bike_park_id, user_id)` constraint (one review per user per park; repeated submissions update the same row)
+
+Public responses format reviewer names as `First L.` from `users.name` when present.
 
 ---
 
@@ -194,9 +213,7 @@ Until that custom environment exists, use **`vercel deploy --target preview`** (
 
 ## Planned / follow-up (from product notes)
 
-Document these in this file when they ship:
-
-- Review submission (authenticated) and listing on park detail
+Document additional bike-park roadmap items here when they ship.
 
 ---
 

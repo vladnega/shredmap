@@ -2,7 +2,7 @@
 
 This document captures the **product vision** and **technical guardrails** for automated agents (and humans) working on this repository.
 
-**Longer reference (routes, APIs, env, data):** [`docs/shredmap.md`](docs/shredmap.md). Update that doc (and this file when vision/key paths change) whenever you ship or materially change a feature — see `.cursor/rules/keep-docs-up-to-date.mdc`.
+**Longer reference (routes, APIs, env, data):** [`docs/shredmap/index.md`](docs/shredmap/index.md). Update the relevant feature/reference wiki page(s) (and this file when vision/key paths change) whenever you ship or materially change a feature — see `.cursor/rules/keep-docs-up-to-date.mdc`.
 
 ## What we are building
 
@@ -32,7 +32,7 @@ This document captures the **product vision** and **technical guardrails** for a
 
 | Capability | Who |
 |------------|-----|
-| **Post reviews** for a park | Any signed-in user |
+| **Post reviews** for a park | WorkOS roles `member`, `admin`, or `moderator` |
 | **Add / edit / delete bike parks** | **Admin** or **moderator** WorkOS role slugs (see `lib/auth/bike-park-staff-roles.ts`; enforced on API routes) |
 
 The intent is **community maintenance**: the map and directory improve through contributions, with trusted moderators curating structure and quality.
@@ -48,7 +48,7 @@ The intent is **community maintenance**: the map and directory improve through c
 
 - For **WorkOS** or other third-party auth/authz SDK changes, validate fields and payload shapes against the **installed SDK types** in `node_modules` before coding.
 - Use the relevant skill references (for WorkOS: `workos` skill + the matching `references/*.md`) and prefer canonical SDK/session fields over guessed JSON shapes.
-- If docs and runtime types differ, treat the installed SDK types as the implementation contract and document any discrepancy in `docs/shredmap.md`.
+- If docs and runtime types differ, treat the installed SDK types as the implementation contract and document any discrepancy in `docs/shredmap/`.
 - Do **not** cast objects (`as SomeObject`, `as Record<...>`, `as unknown as ...`) to force a shape. Use real types, inference, destructuring, and type guards instead.
 - If an object cast seems unavoidable, stop and ask the user for permission before adding it.
 

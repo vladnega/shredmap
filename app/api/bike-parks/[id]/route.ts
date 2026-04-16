@@ -65,6 +65,7 @@ export async function PATCH(
     ...(data.buyTicketUrl !== undefined
       ? { buyTicketUrl: data.buyTicketUrl ?? null }
       : {}),
+    ...(data.payment !== undefined ? { payment: data.payment ?? null } : {}),
     ...(data.logoUrl !== undefined ? { logoUrl: data.logoUrl ?? null } : {}),
     ...(data.pinLogoUrl !== undefined ? { pinLogoUrl: data.pinLogoUrl ?? null } : {}),
     ...(data.facilities !== undefined

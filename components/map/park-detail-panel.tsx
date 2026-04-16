@@ -6,6 +6,7 @@ import { X, ExternalLink, MapPin, Pencil } from 'lucide-react';
 import useSWR from 'swr';
 import { TrailDifficultyIcon } from '@/components/bike-parks/trail-difficulty-icon';
 import { Button } from '@/components/ui/button';
+import { ParkReviewsSection } from '@/components/reviews/park-reviews-section';
 import type { BikePark } from '@/lib/db/schema';
 import { BIKE_PARK_STAFF_ROLE_SLUGS } from '@/lib/auth/bike-park-staff-roles';
 import { useAppUser } from '@/lib/hooks/use-app-user';
@@ -135,17 +136,6 @@ export function ParkDetailPanel({
           <h2 className="text-xl font-bold tracking-tight text-white leading-tight">
             {park.name}
           </h2>
-          {park.ratingScore != null && (
-            <p className="mt-1 text-sm text-amber-400 font-medium">
-              {park.ratingScore.toFixed(1)} / 5
-              {park.ratingVoteCount != null && park.ratingVoteCount > 0 && (
-                <span className="text-zinc-500 font-normal">
-                  {' '}
-                  · {park.ratingVoteCount} votes
-                </span>
-              )}
-            </p>
-          )}
         </div>
         <Button
           type="button"
@@ -302,34 +292,18 @@ export function ParkDetailPanel({
           </Button>
         </div>
 
-        {!user ? (
-          <p className="mt-4 text-xs text-zinc-600">
-            Community reviews and edits require an account.{' '}
-            <Link href="/sign-in" className="text-orange-400 hover:underline">
-              Sign in
+        <ParkReviewsSection bikeParkId={park.id} />
+
+        {isStaff ? (
+          <p className="mt-4 text-xs text-zinc-500">
+            <Link
+              href="/admin/bike-parks"
+              className="font-medium text-orange-400 hover:underline"
+            >
+              Manage bike parks
             </Link>
           </p>
-        ) : (
-          <div className="mt-4 space-y-2 text-xs text-zinc-500">
-            <p>
-              You are signed in. Community reviews will appear here once that feature
-              ships.{' '}
-              <Link href="/account" className="text-orange-400 hover:underline">
-                Account
-              </Link>
-            </p>
-            {isStaff ? (
-              <p>
-                <Link
-                  href="/admin/bike-parks"
-                  className="font-medium text-orange-400 hover:underline"
-                >
-                  Manage bike parks
-                </Link>
-              </p>
-            ) : null}
-          </div>
-        )}
+        ) : null}
       </div>
     </aside>
   );

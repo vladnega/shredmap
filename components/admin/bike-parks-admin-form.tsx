@@ -85,6 +85,7 @@ export function BikeParksAdminForm({
   const [longitude, setLongitude] = useState(defaultLng);
   const [website, setWebsite] = useState('');
   const [buyTicketUrl, setBuyTicketUrl] = useState('');
+  const [requiresPayment, setRequiresPayment] = useState(false);
   const [logoUrl, setLogoUrl] = useState('');
   const [pinLogoUrl, setPinLogoUrl] = useState('');
   const [openingHours, setOpeningHours] = useState<OpeningHoursFormState>(
@@ -105,6 +106,7 @@ export function BikeParksAdminForm({
     setLongitude(defaultLng);
     setWebsite('');
     setBuyTicketUrl('');
+    setRequiresPayment(false);
     setLogoUrl('');
     setPinLogoUrl('');
     setOpeningHours(emptyOpeningHours());
@@ -138,6 +140,7 @@ export function BikeParksAdminForm({
         setLongitude(park.longitude);
         setWebsite(park.primaryCtaUrl ?? '');
         setBuyTicketUrl(park.buyTicketUrl ?? '');
+        setRequiresPayment(park.payment === 'paid');
         setLogoUrl(park.logoUrl ?? '');
         setPinLogoUrl(park.pinLogoUrl ?? '');
         setOpeningHours(openingHoursToFormState(park.openingHours));
@@ -191,6 +194,7 @@ export function BikeParksAdminForm({
         longitude,
         ...(trimmedWebsite ? { website: trimmedWebsite } : {}),
         ...(trimmedBuyTicketUrl ? { buyTicketUrl: trimmedBuyTicketUrl } : {}),
+        payment: requiresPayment ? 'paid' : 'free',
         ...(trimmedLogoUrl ? { logoUrl: trimmedLogoUrl } : {}),
         ...(trimmedPinLogoUrl ? { pinLogoUrl: trimmedPinLogoUrl } : {}),
         openingHours: openingHoursPayload,
@@ -368,6 +372,25 @@ export function BikeParksAdminForm({
             placeholder="https://"
             className="border-zinc-700 bg-zinc-900 text-white"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="bp-pricing" className="text-zinc-300">
+            Pricing
+          </Label>
+          <label
+            htmlFor="bp-pricing"
+            className="flex items-center gap-3 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200"
+          >
+            <input
+              id="bp-pricing"
+              type="checkbox"
+              checked={requiresPayment}
+              onChange={(e) => setRequiresPayment(e.target.checked)}
+              className="h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-orange-500 focus:ring-orange-500"
+            />
+            <span>Payment required to ride this park</span>
+          </label>
         </div>
 
         <div className="space-y-2">

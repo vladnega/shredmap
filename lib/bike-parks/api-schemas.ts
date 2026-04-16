@@ -106,6 +106,9 @@ export const bikeParkPatchBodySchema = z
       .optional(),
     website: patchOptionalUrl,
     buyTicketUrl: patchOptionalUrl,
+    payment: z
+      .union([z.literal('paid'), z.literal('free'), z.null(), z.undefined()])
+      .optional(),
     logoUrl: patchOptionalUrl,
     pinLogoUrl: patchOptionalUrl,
     facilities: facilitiesSchema.optional(),
@@ -120,6 +123,7 @@ export const bikeParkPatchBodySchema = z
       obj.longitude !== undefined ||
       obj.website !== undefined ||
       obj.buyTicketUrl !== undefined ||
+      obj.payment !== undefined ||
       obj.logoUrl !== undefined ||
       obj.pinLogoUrl !== undefined ||
       obj.facilities !== undefined ||
@@ -129,3 +133,52 @@ export const bikeParkPatchBodySchema = z
   );
 
 export type BikeParkPatchBody = z.infer<typeof bikeParkPatchBodySchema>;
+
+const reviewDescriptionValidationMessage =
+  'Tell riders what trails or facilities stood out on your visit.';
+
+export const bikeParkReviewBodySchema = z.object({
+  rating: z
+    .number()
+    .int('Rating must be a whole number between 1 and 5')
+    .min(1, 'Rating must be between 1 and 5')
+    .max(5, 'Rating must be between 1 and 5'),
+  description: z
+    .string()
+    .trim()
+    .min(1, reviewDescriptionValidationMessage)
+    .max(2_500, 'Keep your review under 2500 characters.'),
+});
+
+const cursorFromQueryParam = z.preprocess((value) => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number.parseInt(trimmed, 10);
+  return Number.isNaN(parsed) ? value : parsed;
+}, z.number().int().positive('Cursor must be a positive integer').optional());
+
+const limitFromQueryParam = z.preprocess((value) => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number.parseInt(trimmed, 10);
+  return Number.isNaN(parsed) ? value : parsed;
+}, z.number().int().min(1, 'Limit must be at least 1').max(25, 'Limit must be 25 or lower').default(10));
+
+const ratingFromQueryParam = z.preprocess((value) => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number.parseInt(trimmed, 10);
+  return Number.isNaN(parsed) ? value : parsed;
+}, z.number().int().min(1, 'Rating filter must be between 1 and 5').max(5, 'Rating filter must be between 1 and 5').optional());
+
+export const bikeParkReviewListQuerySchema = z.object({
+  cursor: cursorFromQueryParam,
+  limit: limitFromQueryParam,
+  rating: ratingFromQueryParam,
+});
+
+export type BikeParkReviewBody = z.infer<typeof bikeParkReviewBodySchema>;
+export type BikeParkReviewListQuery = z.infer<typeof bikeParkReviewListQuerySchema>;

@@ -9,7 +9,11 @@ When you **add**, **remove**, or **materially change** a user-visible feature, A
 
 ## What to update
 
-- **Product behavior, map UX, auth modes, bike park APIs, env vars, or schema fields:** edit `docs/shredmap.md` (and `docs/README.md` only if the doc index or cross-links change).
+- **Product behavior, map UX, auth modes, bike park APIs, env vars, or schema fields:** update the feature-based wiki in `docs/shredmap/`:
+  - `docs/shredmap/index.md` for top-level navigation changes
+  - `docs/shredmap/features/<feature>.md` for user-facing or API feature changes
+  - `docs/shredmap/reference/<topic>.md` for deeper technical/data/ops details
+  - update `docs/README.md` if index links or wiki structure change
 - **Shared starter structure** (route groups, generic catalog, migration workflow): edit `docs/boilerplate.md` when that documentation is wrong after your change.
 - **Agent-facing vision or guardrails:** edit `AGENTS.md` if the product rules or key file map change.
 - **Setup commands or top-level scripts:** keep `README.md` consistent if behavior or prerequisites change.
@@ -22,5 +26,6 @@ When you **add**, **remove**, or **materially change** a user-visible feature, A
 ## Minimal process
 
 1. Finish the code change.
-2. Skim `docs/shredmap.md` (and related files above); adjust sections that would mislead a new contributor.
-3. If nothing user-facing changed, do not add doc churn.
+2. Update the most relevant page(s) in `docs/shredmap/features/` and add/reference deeper detail in `docs/shredmap/reference/` when needed.
+3. Ensure the wiki index (`docs/shredmap/index.md`) and docs index (`docs/README.md`) still guide a new contributor to the right pages.
+4. If nothing user-facing changed, do not add doc churn.

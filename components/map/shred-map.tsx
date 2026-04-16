@@ -12,8 +12,6 @@ import { MAP_UI_LAYER_Z } from '@/lib/map/map-ui-layers';
 
 const UK_CENTER = { lat: 54.2, lng: -2.5 };
 const DEFAULT_ZOOM = 6;
-/** Minimum zoom when selecting a park from a marker on narrow viewports. */
-const MOBILE_MARKER_SELECT_MIN_ZOOM = 11;
 
 /** Minimal dark map styling (Google Maps JS). */
 const MAP_STYLES: google.maps.MapTypeStyle[] = [
@@ -57,9 +55,6 @@ export function ShredMap({
   const [detail, setDetail] = useState<BikePark | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [desktop, setDesktop] = useState(true);
-
-  const desktopRef = useRef(desktop);
-  desktopRef.current = desktop;
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 768px)');
@@ -130,11 +125,6 @@ export function ShredMap({
       markersRef,
       result.parks,
       setSelectedId,
-      {
-        isDesktop: () => desktopRef.current,
-        mobileSelectMinZoom: MOBILE_MARKER_SELECT_MIN_ZOOM,
-        mapFallbackZoom: DEFAULT_ZOOM,
-      },
     );
   }, []);
 
@@ -186,7 +176,7 @@ export function ShredMap({
     window.setTimeout(() => {
       google.maps.event.trigger(map, 'resize');
     }, 320);
-  }, [mapReady, desktop, selectedId]);
+  }, [mapReady, desktop]);
 
   const closePanel = useCallback(() => {
     setSelectedId(null);
