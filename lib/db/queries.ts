@@ -145,7 +145,10 @@ export async function updateBikeParkById(
       | 'logoUrl'
       | 'pinLogoUrl'
       | 'primaryCtaUrl'
+      | 'buyTicketUrl'
       | 'amenities'
+      | 'trailDifficultyCounts'
+      | 'openingHours'
     >
   >,
 ) {

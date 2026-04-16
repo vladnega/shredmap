@@ -11,6 +11,7 @@ import {
   smallint,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import type { TrailDifficultyCounts } from '@/lib/bike-parks/trail-difficulties';
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -89,19 +90,18 @@ export const bikeParks = pgTable('bike_parks', {
   logoUrl: text('logo_url'),
   pinLogoUrl: text('pin_logo_url'),
   amenities: jsonb('amenities').$type<Record<string, boolean>>(),
-  trailCount: integer('trail_count'),
-  totalTrailLengthKm: doublePrecision('total_trail_length_km'),
+  trailDifficultyCounts:
+    jsonb('trail_difficulty_counts').$type<TrailDifficultyCounts>(),
   ratingScore: doublePrecision('rating_score'),
   ratingVoteCount: integer('rating_vote_count'),
   primaryCtaUrl: text('primary_cta_url'),
+  buyTicketUrl: text('buy_ticket_url'),
   primaryCtaType: varchar('primary_cta_type', { length: 64 }),
   payment: varchar('payment', { length: 64 }),
   status: varchar('status', { length: 64 }),
   galleryImageUrls: jsonb('gallery_image_urls').$type<string[]>(),
   /** Structured hours when available (manual or future import). */
   openingHours: jsonb('opening_hours'),
-  /** Optional external reference URL for this listing. */
-  sourceUrl: text('source_url'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

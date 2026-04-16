@@ -39,9 +39,12 @@ export async function POST(request: Request) {
     latitude,
     longitude,
     website,
+    buyTicketUrl,
     logoUrl,
     pinLogoUrl,
     facilities,
+    trailDifficultyCounts,
+    openingHours,
   } =
     parsed.data;
 
@@ -52,9 +55,12 @@ export async function POST(request: Request) {
     latitude,
     longitude,
     primaryCtaUrl: website ?? null,
+    buyTicketUrl: buyTicketUrl ?? null,
     logoUrl: logoUrl ?? null,
     pinLogoUrl: pinLogoUrl ?? null,
     amenities: selectedFacilitiesToAmenities(facilities),
+    trailDifficultyCounts,
+    openingHours: openingHours ?? null,
   });
 
   if (!row) {

@@ -22,6 +22,34 @@
       "when": 1776074400000,
       "tag": "0002_workos_roles_source_of_truth",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776330000000,
+      "tag": "0003_drop_bike_park_source_url",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1776416400000,
+      "tag": "0004_add_bike_park_buy_ticket_url",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1776380000000,
+      "tag": "0005_replace_trail_count_with_difficulty_counts",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776336000000,
+      "tag": "0006_drop_bike_park_total_trail_length",
+      "breakpoints": true
     }
   ]
 }

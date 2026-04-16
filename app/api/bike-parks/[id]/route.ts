@@ -62,10 +62,19 @@ export async function PATCH(
     ...(data.latitude !== undefined ? { latitude: data.latitude } : {}),
     ...(data.longitude !== undefined ? { longitude: data.longitude } : {}),
     ...(data.website !== undefined ? { primaryCtaUrl: data.website ?? null } : {}),
+    ...(data.buyTicketUrl !== undefined
+      ? { buyTicketUrl: data.buyTicketUrl ?? null }
+      : {}),
     ...(data.logoUrl !== undefined ? { logoUrl: data.logoUrl ?? null } : {}),
     ...(data.pinLogoUrl !== undefined ? { pinLogoUrl: data.pinLogoUrl ?? null } : {}),
     ...(data.facilities !== undefined
       ? { amenities: selectedFacilitiesToAmenities(data.facilities) }
+      : {}),
+    ...(data.trailDifficultyCounts !== undefined
+      ? { trailDifficultyCounts: data.trailDifficultyCounts }
+      : {}),
+    ...(data.openingHours !== undefined
+      ? { openingHours: data.openingHours }
       : {}),
   });
 

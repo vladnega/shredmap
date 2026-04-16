@@ -15,6 +15,7 @@
 - **Chrome:** Top bar with branding and auth/navigation (`map-chrome.tsx`). Signed-out users see sign-in/sign-up actions; signed-in users get a themed hamburger menu with quick links for **Map**, **Account**, **Admin**, optional **Manage parks** (when WorkOS roles include `admin` or `moderator`), and **Sign out**. **`/sign-in`** and **`/sign-up`** are server routes that immediately redirect to WorkOS AuthKit via `getSignInUrl` / `getSignUpUrl` (`lib/auth/workos-redirect.ts`; optional `?redirect=` for return path).
 - **Park detail footer:** Signed-out users see a prompt to sign in for community features; signed-in users see account messaging; users with staff roles also get a **Manage bike parks** link (`park-detail-panel.tsx`).
 - **Park detail staff action:** Staff users (`admin` / `moderator`) also see an **Edit park** button in the pin side panel that deep-links directly to the per-park admin route (`/admin/bike-parks/[parkId]`).
+- **Park detail links:** The detail panel keeps **Visit website** (from `primaryCtaUrl`) and additionally shows **Buy ticket** when `buyTicketUrl` is present.
 
 ### Authentication
 
@@ -43,7 +44,7 @@ The repo still includes **marketing**, **catalog** (`/items`), **dashboard**, **
 ### Staff UI
 
 - **`/admin/bike-parks`** — staff-only directory with instant name search and infinite scrolling, sorted alphabetically; selecting a park opens its editor.
-- **`/admin/bike-parks/[parkId]`** — per-park editor route for updating/deleting a specific listing, used by both the manage list and map side panel. Facilities are edited as selectable predefined tags (no freeform entry).
+- **`/admin/bike-parks/[parkId]`** — per-park editor route for updating/deleting a specific listing, used by both the manage list and map side panel. Facilities are edited as selectable predefined tags (no freeform entry). Opening hours are edited day-by-day in a friendly form and shown in the public park detail panel.
 - Moderator **example** for manual QA: [Bull Track Bike Park](https://bulltrackbikepark.co.uk/) — name e.g. `Bull Track Bike Park`, website `https://bulltrackbikepark.co.uk/`, short description, coordinates near Crowborough (~`51.058`, `-0.161`).
 
 ### Diagrams
@@ -120,12 +121,11 @@ Table `bike_parks` (see `lib/db/schema.ts`) stores:
 
 - Identity and position: `id` (UUID), `name`, `latitude`, `longitude`
 - Presentation: `description`, `logoUrl`, `pinLogoUrl`, `galleryImageUrls`
-- Trail stats: `trailCount`, `totalTrailLengthKm`
+- Trail stats: `trailDifficultyCounts` (JSON with `green`, `blue`, `red`, `black`, `doubleBlack`)
 - Ratings: `ratingScore`, `ratingVoteCount`
 - Facilities: `amenities` (JSON object of booleans). Staff editing uses a controlled predefined vocabulary from `lib/bike-parks/facilities.ts`.
-- Links and business: `primaryCtaUrl`, `primaryCtaType`, `payment`, `status`
+- Links and business: `primaryCtaUrl`, `buyTicketUrl`, `primaryCtaType`, `payment`, `status`
 - **Opening hours:** `openingHours` (JSON)
-- **Provenance:** `sourceUrl`
 - Timestamps: `createdAt`, `updatedAt`
 
 `park_reviews` links `bike_parks` to `users` with `rating` and `body` — intended for logged-in reviews; UI/API may be incomplete until built out.

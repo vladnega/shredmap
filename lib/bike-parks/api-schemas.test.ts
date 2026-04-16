@@ -19,6 +19,15 @@ describe('bikeParkCreateBodySchema', () => {
       longitude: -1,
     });
     expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.trailDifficultyCounts).toEqual({
+        green: 0,
+        blue: 0,
+        red: 0,
+        black: 0,
+        doubleBlack: 0,
+      });
+    }
   });
 
   it('rejects invalid website', () => {
@@ -42,6 +51,54 @@ describe('bikeParkCreateBodySchema', () => {
     });
     expect(r.success).toBe(true);
   });
+
+  it('accepts explicit trail difficulty counts', () => {
+    const r = bikeParkCreateBodySchema.safeParse({
+      name: 'Test',
+      description: 'Hello',
+      latitude: 51,
+      longitude: -1,
+      trailDifficultyCounts: {
+        green: 1,
+        blue: 2,
+        red: 3,
+        black: 4,
+        doubleBlack: 5,
+      },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('accepts opening hours object', () => {
+    const r = bikeParkCreateBodySchema.safeParse({
+      name: 'Test',
+      description: 'Hello',
+      latitude: 51,
+      longitude: -1,
+      openingHours: {
+        monday: '09:00-17:00',
+        tuesday: '09:00-17:00',
+      },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('rejects negative trail difficulty values', () => {
+    const r = bikeParkCreateBodySchema.safeParse({
+      name: 'Test',
+      description: 'Hello',
+      latitude: 51,
+      longitude: -1,
+      trailDifficultyCounts: {
+        green: -1,
+        blue: 2,
+        red: 3,
+        black: 4,
+        doubleBlack: 5,
+      },
+    });
+    expect(r.success).toBe(false);
+  });
 });
 
 describe('bikeParkPatchBodySchema', () => {
@@ -57,6 +114,24 @@ describe('bikeParkPatchBodySchema', () => {
 
   it('allows clearing website with null', () => {
     const r = bikeParkPatchBodySchema.safeParse({ website: null });
+    expect(r.success).toBe(true);
+  });
+
+  it('allows updating trail difficulty counts', () => {
+    const r = bikeParkPatchBodySchema.safeParse({
+      trailDifficultyCounts: {
+        green: 0,
+        blue: 1,
+        red: 2,
+        black: 3,
+        doubleBlack: 4,
+      },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('allows clearing opening hours with null', () => {
+    const r = bikeParkPatchBodySchema.safeParse({ openingHours: null });
     expect(r.success).toBe(true);
   });
 });

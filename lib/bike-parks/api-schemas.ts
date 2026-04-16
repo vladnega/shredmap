@@ -1,5 +1,8 @@
 import { z } from 'zod';
 import { BIKE_PARK_FACILITY_SLUGS } from '@/lib/bike-parks/facilities';
+import {
+  EMPTY_TRAIL_DIFFICULTY_COUNTS,
+} from '@/lib/bike-parks/trail-difficulties';
 
 function isHttpUrl(value: string): boolean {
   try {
@@ -40,6 +43,21 @@ const facilitiesSchema = z
   .max(BIKE_PARK_FACILITY_SLUGS.length)
   .transform((values) => Array.from(new Set(values)));
 
+const trailDifficultyCountsSchema = z.object({
+  green: z.number().int().nonnegative(),
+  blue: z.number().int().nonnegative(),
+  red: z.number().int().nonnegative(),
+  black: z.number().int().nonnegative(),
+  doubleBlack: z.number().int().nonnegative(),
+});
+const openingHoursSchema = z.record(
+  z.string().trim().min(1).max(32),
+  z.string().trim().min(1).max(120),
+);
+const patchOpeningHoursSchema = z
+  .union([openingHoursSchema, z.null(), z.undefined()])
+  .optional();
+
 /** Escape minimal HTML for user-provided description shown with dangerouslySetInnerHTML. */
 export function escapeHtmlForParkDescription(text: string): string {
   const escaped = text
@@ -60,9 +78,14 @@ export const bikeParkCreateBodySchema = z.object({
     .finite()
     .refine((n) => n >= -180 && n <= 180, 'longitude out of range'),
   website: optionalUrl.optional(),
+  buyTicketUrl: optionalUrl.optional(),
   logoUrl: optionalUrl.optional(),
   pinLogoUrl: optionalUrl.optional(),
   facilities: facilitiesSchema.default([]),
+  trailDifficultyCounts: trailDifficultyCountsSchema.default(
+    EMPTY_TRAIL_DIFFICULTY_COUNTS,
+  ),
+  openingHours: openingHoursSchema.optional(),
 });
 
 export type BikeParkCreateBody = z.infer<typeof bikeParkCreateBodySchema>;
@@ -82,9 +105,12 @@ export const bikeParkPatchBodySchema = z
       .refine((n) => n >= -180 && n <= 180, 'longitude out of range')
       .optional(),
     website: patchOptionalUrl,
+    buyTicketUrl: patchOptionalUrl,
     logoUrl: patchOptionalUrl,
     pinLogoUrl: patchOptionalUrl,
     facilities: facilitiesSchema.optional(),
+    trailDifficultyCounts: trailDifficultyCountsSchema.optional(),
+    openingHours: patchOpeningHoursSchema,
   })
   .refine(
     (obj) =>
@@ -93,9 +119,12 @@ export const bikeParkPatchBodySchema = z
       obj.latitude !== undefined ||
       obj.longitude !== undefined ||
       obj.website !== undefined ||
+      obj.buyTicketUrl !== undefined ||
       obj.logoUrl !== undefined ||
       obj.pinLogoUrl !== undefined ||
-      obj.facilities !== undefined,
+      obj.facilities !== undefined ||
+      obj.trailDifficultyCounts !== undefined ||
+      obj.openingHours !== undefined,
     { message: 'At least one field is required' },
   );
 

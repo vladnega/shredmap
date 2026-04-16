@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BikeParkLocationPicker } from '@/components/admin/bike-park-location-picker';
 import { Button } from '@/components/ui/button';
+import { TrailDifficultyIcon } from '@/components/bike-parks/trail-difficulty-icon';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { BikePark } from '@/lib/db/schema';
@@ -12,6 +13,13 @@ import {
   BIKE_PARK_FACILITY_OPTIONS,
   type BikeParkFacilitySlug,
 } from '@/lib/bike-parks/facilities';
+import {
+  EMPTY_TRAIL_DIFFICULTY_COUNTS,
+  TRAIL_DIFFICULTY_DESCRIPTIONS,
+  TRAIL_DIFFICULTY_LABELS,
+  TRAIL_DIFFICULTY_LEVELS,
+  type TrailDifficultyLevel,
+} from '@/lib/bike-parks/trail-difficulties';
 
 function htmlToPlainText(html: string): string {
   if (typeof document === 'undefined') {
@@ -24,6 +32,43 @@ function htmlToPlainText(html: string): string {
 
 const defaultLat = 51.058;
 const defaultLng = -0.161;
+const emptyTrailDifficultyCounts = () => ({ ...EMPTY_TRAIL_DIFFICULTY_COUNTS });
+const openingHoursDays = [
+  { key: 'monday', label: 'Monday' },
+  { key: 'tuesday', label: 'Tuesday' },
+  { key: 'wednesday', label: 'Wednesday' },
+  { key: 'thursday', label: 'Thursday' },
+  { key: 'friday', label: 'Friday' },
+  { key: 'saturday', label: 'Saturday' },
+  { key: 'sunday', label: 'Sunday' },
+] as const;
+type OpeningHoursDay = (typeof openingHoursDays)[number]['key'];
+type OpeningHoursFormState = Record<OpeningHoursDay, string>;
+const emptyOpeningHours = (): OpeningHoursFormState => ({
+  monday: '',
+  tuesday: '',
+  wednesday: '',
+  thursday: '',
+  friday: '',
+  saturday: '',
+  sunday: '',
+});
+
+function openingHoursToFormState(
+  openingHours: BikePark['openingHours'],
+): OpeningHoursFormState {
+  const initial = emptyOpeningHours();
+  if (!openingHours || typeof openingHours !== 'object' || Array.isArray(openingHours)) {
+    return initial;
+  }
+  for (const day of openingHoursDays) {
+    const value = Reflect.get(openingHours, day.key);
+    if (typeof value === 'string') {
+      initial[day.key] = value;
+    }
+  }
+  return initial;
+}
 
 export function BikeParksAdminForm({
   googleMapsApiKey,
@@ -39,9 +84,16 @@ export function BikeParksAdminForm({
   const [latitude, setLatitude] = useState(defaultLat);
   const [longitude, setLongitude] = useState(defaultLng);
   const [website, setWebsite] = useState('');
+  const [buyTicketUrl, setBuyTicketUrl] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [pinLogoUrl, setPinLogoUrl] = useState('');
+  const [openingHours, setOpeningHours] = useState<OpeningHoursFormState>(
+    emptyOpeningHours,
+  );
   const [facilities, setFacilities] = useState<BikeParkFacilitySlug[]>([]);
+  const [trailDifficultyCounts, setTrailDifficultyCounts] = useState(
+    emptyTrailDifficultyCounts,
+  );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -52,9 +104,12 @@ export function BikeParksAdminForm({
     setLatitude(defaultLat);
     setLongitude(defaultLng);
     setWebsite('');
+    setBuyTicketUrl('');
     setLogoUrl('');
     setPinLogoUrl('');
+    setOpeningHours(emptyOpeningHours());
     setFacilities([]);
+    setTrailDifficultyCounts(emptyTrailDifficultyCounts());
     setMessage(null);
   }, []);
 
@@ -82,9 +137,14 @@ export function BikeParksAdminForm({
         setLatitude(park.latitude);
         setLongitude(park.longitude);
         setWebsite(park.primaryCtaUrl ?? '');
+        setBuyTicketUrl(park.buyTicketUrl ?? '');
         setLogoUrl(park.logoUrl ?? '');
         setPinLogoUrl(park.pinLogoUrl ?? '');
+        setOpeningHours(openingHoursToFormState(park.openingHours));
         setFacilities(amenitiesToSelectedFacilities(park.amenities));
+        setTrailDifficultyCounts(
+          park.trailDifficultyCounts ?? emptyTrailDifficultyCounts(),
+        );
       } catch {
         setMessage('Could not load park');
       } finally {
@@ -116,17 +176,26 @@ export function BikeParksAdminForm({
       const trimmedName = name.trim();
       const trimmedDescription = description.trim();
       const trimmedWebsite = website.trim();
+      const trimmedBuyTicketUrl = buyTicketUrl.trim();
       const trimmedLogoUrl = logoUrl.trim();
       const trimmedPinLogoUrl = pinLogoUrl.trim();
+      const openingHoursEntries = openingHoursDays
+        .map(({ key }) => [key, openingHours[key].trim()] as const)
+        .filter(([, value]) => value.length > 0);
+      const openingHoursPayload =
+        openingHoursEntries.length > 0 ? Object.fromEntries(openingHoursEntries) : null;
       const body = {
         name: trimmedName,
         description: trimmedDescription,
         latitude,
         longitude,
         ...(trimmedWebsite ? { website: trimmedWebsite } : {}),
+        ...(trimmedBuyTicketUrl ? { buyTicketUrl: trimmedBuyTicketUrl } : {}),
         ...(trimmedLogoUrl ? { logoUrl: trimmedLogoUrl } : {}),
         ...(trimmedPinLogoUrl ? { pinLogoUrl: trimmedPinLogoUrl } : {}),
+        openingHours: openingHoursPayload,
         facilities,
+        trailDifficultyCounts,
       };
 
       const res = await fetch(`/api/bike-parks/${editingId}`, {
@@ -185,6 +254,17 @@ export function BikeParksAdminForm({
       }
       return Array.from(next);
     });
+  }, []);
+  const setTrailCount = useCallback(
+    (level: TrailDifficultyLevel, value: string) => {
+      const parsed = Number.parseInt(value, 10);
+      const next = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+      setTrailDifficultyCounts((prev) => ({ ...prev, [level]: next }));
+    },
+    [],
+  );
+  const setOpeningHour = useCallback((day: OpeningHoursDay, value: string) => {
+    setOpeningHours((prev) => ({ ...prev, [day]: value }));
   }, []);
 
   return (
@@ -277,6 +357,20 @@ export function BikeParksAdminForm({
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="bp-buy-ticket" className="text-zinc-300">
+            Buy ticket URL (optional)
+          </Label>
+          <Input
+            id="bp-buy-ticket"
+            type="url"
+            value={buyTicketUrl}
+            onChange={(e) => setBuyTicketUrl(e.target.value)}
+            placeholder="https://"
+            className="border-zinc-700 bg-zinc-900 text-white"
+          />
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="bp-logo" className="text-zinc-300">
             Logo URL (optional)
           </Label>
@@ -302,6 +396,71 @@ export function BikeParksAdminForm({
             placeholder="https://"
             className="border-zinc-700 bg-zinc-900 text-white"
           />
+        </div>
+
+        <div className="space-y-3">
+          <Label className="text-zinc-300">Opening hours (optional)</Label>
+          <p className="text-xs text-zinc-500">
+            Fill the days you know. Leave a day blank if unknown. Use text like
+            {' '}
+            <code>09:00-17:00</code>
+            {' '}
+            or
+            {' '}
+            <code>Closed</code>.
+          </p>
+          <div className="space-y-2 rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
+            {openingHoursDays.map((day) => (
+              <div key={day.key} className="grid items-center gap-2 sm:grid-cols-[120px_1fr]">
+                <Label htmlFor={`bp-opening-${day.key}`} className="text-zinc-300">
+                  {day.label}
+                </Label>
+                <Input
+                  id={`bp-opening-${day.key}`}
+                  value={openingHours[day.key]}
+                  onChange={(e) => setOpeningHour(day.key, e.target.value)}
+                  placeholder="e.g. 09:00-17:00"
+                  className="border-zinc-700 bg-zinc-900 text-white"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <Label className="text-zinc-300">Trail difficulty counts</Label>
+          <p className="text-xs text-zinc-500">
+            Add the number of trails at each level. These level descriptions are
+            global across Shredmap.
+          </p>
+          <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
+            {TRAIL_DIFFICULTY_LEVELS.map((level) => (
+              <div key={level} className="grid gap-2 sm:grid-cols-[1fr_120px] sm:gap-4">
+                <div>
+                  <Label
+                    htmlFor={`bp-trails-${level}`}
+                    className="flex items-center gap-2 text-zinc-200"
+                  >
+                    <TrailDifficultyIcon level={level} />
+                    {TRAIL_DIFFICULTY_LABELS[level]}
+                  </Label>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {TRAIL_DIFFICULTY_DESCRIPTIONS[level]}
+                  </p>
+                </div>
+                <Input
+                  id={`bp-trails-${level}`}
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  step={1}
+                  value={trailDifficultyCounts[level]}
+                  onChange={(e) => setTrailCount(level, e.target.value)}
+                  className="border-zinc-700 bg-zinc-900 text-white"
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="space-y-3">
