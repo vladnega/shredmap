@@ -32,6 +32,10 @@ Without required WorkOS values, startup fails because `assertWorkOsConfigured()`
 - Hosted deployments use `preview`, `production`, or explicit custom environment slugs.
 - This repo supports a custom `dev` environment via `pnpm vercel:deploy:dev`.
 
+## Database driver (Neon)
+
+The app uses Neon’s **HTTP** driver (`@neondatabase/serverless`). **Drizzle transactions (`db.transaction`) are not supported** on this driver. Use sequential queries instead (see mate invite redeem / accept flows in `lib/social/queries.ts`).
+
 ## Data seeding
 
 - Seed source: `data/bike-parks.seed.json`

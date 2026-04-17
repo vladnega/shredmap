@@ -32,6 +32,7 @@ This document captures the **product vision** and **technical guardrails** for a
 
 | Capability | Who |
 |------------|-----|
+| **Mates, ride plans, map mate overlay** | Any signed-in user with a synced `users` row (`/mates`, `/api/friends`, `/api/ride-plans`) |
 | **Post reviews** for a park | WorkOS roles `member`, `admin`, or `moderator` |
 | **Add / edit / delete bike parks** | **Admin** or **moderator** WorkOS role slugs (see `lib/auth/bike-park-staff-roles.ts`; enforced on API routes) |
 
@@ -57,10 +58,11 @@ The intent is **community maintenance**: the map and directory improve through c
 | Area | Location |
 |------|----------|
 | Map UI | `components/map/` (`shred-map.tsx`, `park-detail-panel.tsx`, `map-chrome.tsx`, `home-map-loader.tsx`) |
+| Mates and ride plans | `app/(mates)/mates/`, `app/(marketing)/mates/join/[token]/`, `components/mates/`, `lib/social/`, `app/api/friends/`, `app/api/ride-plans/` |
 | Bike park API | `app/api/bike-parks/`, staff auth `lib/auth/bike-park-staff.ts`, `lib/db/queries.ts` |
 | Park reviews | `components/reviews/`, `app/(app)/bike-parks/[parkId]/review/`, `app/api/bike-parks/[id]/reviews/` |
 | Staff bike park UI | `app/(app)/admin/bike-parks/` |
-| Schema | `lib/db/schema.ts` — `bikeParks`, `parkReviews`, `users.workOsUserId` |
+| Schema | `lib/db/schema.ts` — `bikeParks`, `parkReviews`, `friendInvitations`, `friendships`, `mateInviteLinks`, `ridePlans`, `users.workOsUserId` |
 | Seed bike parks | `data/bike-parks.seed.json` + `lib/bike-parks/seed-from-json.ts`, invoked from `lib/db/seed.ts` |
 | WorkOS callback | `app/callback/route.ts`, `lib/auth/sync-workos-user.ts` |
 | WorkOS env | `lib/auth/workos-env.ts` — `assertWorkOsConfigured()` |

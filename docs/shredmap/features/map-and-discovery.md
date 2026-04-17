@@ -5,9 +5,12 @@
 - Public users can open `/` and browse bike parks without signing in.
 - Optional query `?park=<bike-park-id>` opens that park’s detail panel on load (used when returning from the review editor).
 - The homepage is a full-screen map (`100dvh`) with park markers from Postgres.
+- Signed-in users: pick a **calendar day** in the top chrome; **mates** who planned a ride at a park that day are reflected on markers (count label + emphasis). See [Mates, invites, and ride plans](./social-and-ride-plans.md).
+- The top chrome includes a **Map | Mates** switch (`/` vs `/mates`).
 - Selecting a marker loads park details in a panel:
   - Mobile: full-screen panel.
   - Desktop: side panel with map still visible.
+  - Signed-in: the **Mates riding here** card lists **you** and **mates** with **upcoming** plans at that park (name + date per row; **You** can remove your plan for a day). **I’m riding here** opens a date picker to save your own plan (today or a future day). Map **day** in the chrome still drives **marker** mate counts for that calendar day.
 
 ## Main flow
 
@@ -22,7 +25,9 @@
 - Marker icon priority:
   1. `pinLogoUrl`
   2. `logoUrl`
-  3. default Google marker
+  3. orange circle (when mate count applies but no logo)
+- Logo images are **round** markers: a DOM overlay (`OverlayView`) clips each logo with CSS (`border-radius` + `object-fit: cover`) and a light ring, so cross-origin logos stay circular even when canvas export would fail (e.g. CORS).
+- When the mate overlay applies, the marker shows a **label** with the number of mates riding there that day and a higher z-index.
 - Marker fetches use abort signals so stale responses are ignored during quick navigation/remounts.
 
 ## UI surfaces
@@ -34,6 +39,7 @@
 
 ## Related docs
 
+- [Mates, invites, and ride plans](./social-and-ride-plans.md)
 - [Bike park management API and staff UI](./bike-park-management.md)
 - [Park reviews](./reviews.md)
 - [Environment and operations](../reference/environment-and-operations.md)

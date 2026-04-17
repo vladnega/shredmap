@@ -54,7 +54,7 @@ export default async function RootLayout({
   );
 
   return (
-    <html lang="en" className={`dark ${manrope.className}`}>
+    <html lang="en" className={`dark ${manrope.className}`} suppressHydrationWarning>
       <body className="min-h-[100dvh] bg-zinc-950 text-zinc-50 antialiased">
         <AuthKitProvider initialAuth={initialAuth}>{swr}</AuthKitProvider>
       </body>

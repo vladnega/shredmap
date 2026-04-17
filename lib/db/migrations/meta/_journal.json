@@ -64,6 +64,20 @@
       "when": 1776419000000,
       "tag": "0008_repair_park_reviews_unique_index",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1776420000000,
+      "tag": "0009_social_friends_and_ride_plans",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1776421000000,
+      "tag": "0010_mate_invite_links",
+      "breakpoints": true
     }
   ]
 }

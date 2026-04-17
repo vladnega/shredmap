@@ -5,6 +5,8 @@ export type BikeParkMapPoint = {
   lng: number;
   logoUrl?: string;
   pinLogoUrl?: string;
+  /** Mates with a ride plan on the selected day (signed-in map overlay). */
+  matesRidingCount?: number;
 };
 
 export type FetchBikeParksForMapResult =

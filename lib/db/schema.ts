@@ -10,6 +10,8 @@ import {
   jsonb,
   smallint,
   uniqueIndex,
+  primaryKey,
+  date,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import type { TrailDifficultyCounts } from '@/lib/bike-parks/trail-difficulties';
@@ -129,6 +131,67 @@ export const parkReviews = pgTable(
   }),
 );
 
+/** Mate requests (distinct from org `invitations`). */
+export const friendInvitations = pgTable('friend_invitations', {
+  id: serial('id').primaryKey(),
+  inviterUserId: integer('inviter_user_id')
+    .notNull()
+    .references(() => users.id),
+  inviteeUserId: integer('invitee_user_id')
+    .notNull()
+    .references(() => users.id),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  respondedAt: timestamp('responded_at'),
+});
+
+/** Accepted mates only; canonical ordering user_low_id < user_high_id. */
+export const friendships = pgTable(
+  'friendships',
+  {
+    userLowId: integer('user_low_id')
+      .notNull()
+      .references(() => users.id),
+    userHighId: integer('user_high_id')
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userLowId, t.userHighId] }),
+  }),
+);
+
+/** One planned park per user per calendar day (local date from client). */
+export const ridePlans = pgTable(
+  'ride_plans',
+  {
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    rideOn: date('ride_on', { mode: 'string' }).notNull(),
+    bikeParkId: uuid('bike_park_id')
+      .notNull()
+      .references(() => bikeParks.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.rideOn] }),
+  }),
+);
+
+/** Shareable mate invite link (one active row per inviter; token rotated on refresh). */
+export const mateInviteLinks = pgTable('mate_invite_links', {
+  inviterUserId: integer('inviter_user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  token: varchar('token', { length: 64 }).notNull().unique(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   organizationMembers: many(organizationMembers),
   activityLogs: many(activityLogs),
@@ -208,6 +271,14 @@ export type BikePark = typeof bikeParks.$inferSelect;
 export type NewBikePark = typeof bikeParks.$inferInsert;
 export type ParkReview = typeof parkReviews.$inferSelect;
 export type NewParkReview = typeof parkReviews.$inferInsert;
+export type FriendInvitation = typeof friendInvitations.$inferSelect;
+export type NewFriendInvitation = typeof friendInvitations.$inferInsert;
+export type Friendship = typeof friendships.$inferSelect;
+export type NewFriendship = typeof friendships.$inferInsert;
+export type RidePlan = typeof ridePlans.$inferSelect;
+export type NewRidePlan = typeof ridePlans.$inferInsert;
+export type MateInviteLink = typeof mateInviteLinks.$inferSelect;
+export type NewMateInviteLink = typeof mateInviteLinks.$inferInsert;
 
 export type OrganizationWithMembers = Organization & {
   organizationMembers: (OrganizationMember & {

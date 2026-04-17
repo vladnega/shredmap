@@ -10,6 +10,7 @@ Start from this page, then drill into feature docs for behavior and implementati
 - [Authentication and authorization](./features/auth-and-authorization.md)
 - [Bike park management API and staff UI](./features/bike-park-management.md)
 - [Park reviews](./features/reviews.md)
+- [Mates, invites, and ride plans](./features/social-and-ride-plans.md)
 
 ## Deep reference
 
@@ -20,7 +21,10 @@ Start from this page, then drill into feature docs for behavior and implementati
 ## Source map
 
 - Map UI: `components/map/`
+- Mates (signed-in): `app/(mates)/mates/`, `components/mates/`
+- Mate invite landing (public): `app/(marketing)/mates/join/[token]/`
 - Bike park API routes: `app/api/bike-parks/`
+- Social APIs: `app/api/friends/`, `app/api/ride-plans/`
 - Park review editor (signed-in): `app/(app)/bike-parks/[parkId]/review/`
 - Staff bike park UI: `app/(app)/admin/bike-parks/`
 - Auth and role checks: `lib/auth/`

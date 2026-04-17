@@ -1,6 +1,6 @@
 ---
 name: research-bike-park-update-script
-description: Researches one or multiple bike parks and produces API-ready payloads plus browser-console scripts (POST create and/or PATCH) for Shredmap. Use when the user asks to populate bike park data from public sources, validate official assets/links, or generate scripts to create or update `/api/bike-parks` and `/api/bike-parks/:id`.
+description: Researches bike parks and delivers a runnable browser script (POST/PATCH against `/api/bike-parks`) plus research notes. Covers trail difficulty counts, logos, and opening hours. Does not edit `data/bike-parks.seed.json` unless the user explicitly requests seed changes.
 ---
 
 # Research Bike Park Update Script
@@ -11,7 +11,11 @@ Use this skill to:
 
 1. Research accurate, current bike park data from authoritative sources.
 2. Map findings to Shredmap bike park API fields.
-3. Generate copy-paste scripts the user can run while authenticated in the app.
+3. **Deliver a `.js` file** the user runs in the **browser DevTools console** on their Shredmap deployment (staff session), not edits to `data/bike-parks.seed.json`.
+
+**Default deliverable:** a checked-in or pasted script under **`.agents/skills/research-bike-park-update-script/browser-scripts/`** (name it after the batch, e.g. `upsert-woburn-chicksands-aston-epping.js`). The script should use relative `/api/bike-parks` URLs, `credentials: 'include'`, **POST** for new rows and **PATCH** for existing (resolve ids via `GET /api/bike-parks` + name match unless the user supplies UUIDs).
+
+**Do not** add or change rows in **`data/bike-parks.seed.json`** for this workflow unless the user **explicitly** asks to update the seed file.
 
 This skill is optimized for:
 
@@ -27,6 +31,7 @@ Task Progress:
 - [ ] Step 1: Decide CREATE vs PATCH per park (row exists or not)
 - [ ] Step 2: Collect sources and classify trust level
 - [ ] Step 3: Build normalized field mapping (including logo + pin assets)
+- [ ] Step 3b: **Trail difficulty inventory** — counts per band + mapping notes (see below); never skip this step
 - [ ] Step 4: Validate URLs/assets and opening hours
 - [ ] Step 5: Generate POST and/or PATCH script(s)
 - [ ] Step 6: Ask for explicit confirmation before execution
@@ -35,8 +40,8 @@ Task Progress:
 
 ## Step 1: Identify targets — CREATE vs PATCH
 
-- **List public markers:** `GET /api/bike-parks` returns `{ parks }` with `id`, `name`, coordinates, etc. Use this to see what already exists **in the user’s database** (not only `data/bike-parks.seed.json`).
-- **Seed file** can hint default UUIDs for a fresh clone, but **production or partially seeded DBs may be missing rows** — always treat “no matching `id`” as a **CREATE**.
+- **List public markers:** `GET /api/bike-parks` returns `{ parks }` with `id`, `name`, coordinates, etc. Use this to see what already exists **in the user’s database**. Match by **exact `name`** in the browser script unless the user provides ids.
+- The **seed file** is only relevant when the user wants local seed changes; for normal research tasks, **ignore** `data/bike-parks.seed.json` and drive **POST/PATCH** only.
 - **PATCH** when a park **already exists**: `PATCH /api/bike-parks/:id` with at least one allowed field.
 - **CREATE** when no row exists: `POST /api/bike-parks` with a full `bikeParkCreateBodySchema` payload (`name`, `description`, `latitude`, `longitude` required; other fields optional with defaults).
 - Prefer exact name matches when correlating research to a row.
@@ -61,6 +66,7 @@ Map research into these API fields where available:
 - `name`
 - `description` (plain text; API escapes to HTML)
 - `latitude`, `longitude`
+- **`trailDifficultyCounts`** — **mandatory research output** for every park (see **Trail difficulty counts** below)
 - `website`
 - `buyTicketUrl`
 - `payment` (`paid` or `free`)
@@ -68,6 +74,40 @@ Map research into these API fields where available:
 - `pinLogoUrl`
 - `openingHours` (record of day -> text; see **Opening hours rules** below)
 - `facilities` (must be allowed slugs only)
+
+### Trail difficulty counts (`trailDifficultyCounts`) — mandatory
+
+The map detail UI shows a **per-band trail count** when `trailDifficultyCounts` is present. Treat this as a **first-class field** alongside logos: **always determine what trail types exist, how many in each band, and populate `trailDifficultyCounts`** (or document why every band is zero).
+
+**Schema (Shredmap):** `green`, `blue`, `red`, `black`, `doubleBlack` — each a **non-negative integer**. Sum = total trails/features the operator counts in those bands for this listing (not guestimated from vibe).
+
+**What to research**
+
+1. **Which grades the venue uses** (e.g. UK green/blue/red/black/**orange**, North American green–double black, etc.).
+2. **How many trails (or distinct named lines/features) fall in each grade**, using the same definition the operator uses on their trail map or trail list.
+3. Whether the venue is **not** a graded MTB facility (e.g. only shared bridleways): then set **all counts to `0`** and explain in `description` — do not invent grades.
+
+**Source priority**
+
+1. Official trail map, trail list PDF, or “Trails” pages on the operator site (counts or enumerable list).
+2. Official booking or trail-status pages that list trails by grade.
+3. **Secondary (clearly label in Sources / assumptions):** Trailforks, MTB project wikis, or national trail databases — use only to fill gaps or cross-check, not as the sole source when an official map exists.
+
+**Mapping other systems → Shredmap bands**
+
+- **UK “orange” / “orange severe” / extra orange markers** used for pro or extreme bike-park lines → map to **`doubleBlack`** (closest match to “pro / double-black” terrain in this app).
+- **“Black – severe”** on Forestry England–style pages → **`black`** unless the operator explicitly treats it as a tier above black → then **`doubleBlack`**.
+- If a trail is labelled **blue/red** (split grade), assign **one** band using the **harder** grade unless the operator publishes a separate count for each half.
+
+**Totals and consistency**
+
+- If the operator publishes a **total trail count** and a **per-grade breakdown**, the **sum of `trailDifficultyCounts` must match** that total (or you must explain a documented exception, e.g. “four pump tracks counted separately”).
+- If only a **total** and **grade labels** are published but **not** per-grade numbers, derive counts by **enumerating named trails/features** from official pages — then state **“derived from official trail names on …”** in Sources / assumptions.
+- If grades are known but **counts cannot be justified**, set bands to **`0`** and put the **qualitative** grade info in **`description`** — do not fabricate numbers.
+
+**Closures and non-parks**
+
+- **Bike park closed / trails removed / rebuild not yet rideable:** set counts to **`0`** (or last officially published counts only if the user explicitly wants historical data preserved — say so).
 
 ### Logo and pin images (mandatory when research allows)
 
@@ -101,6 +141,7 @@ Allowed `facilities` slugs:
 ## Step 4: Validation rules
 
 - Validate all URLs as absolute `http` or `https`.
+- **`trailDifficultyCounts`:** Every value must be a **non-negative integer**; all five keys must be present when the field is included. Prefer **sums that match** the operator’s published total trail count when one exists; if not, explain in Sources / assumptions.
 - **Logo and pin URLs:** Before recommending, verify each **`logoUrl`** and **`pinLogoUrl`** with an **HTTP request** (e.g. `HEAD` or `GET`) that returns **success** (`2xx`). If automated checks fail due to bot protection but the URL is visibly correct on the official site (same path the browser loads), say so and still list the URL with that caveat.
 - **Opening hours rules (mandatory):**
   - Use **only days when the venue is open** for that schedule. **Do not** add keys for closed days and **do not** use values like `Closed`, `N/A`, or `—`.
@@ -110,11 +151,18 @@ Allowed `facilities` slugs:
 - If opening hours conflict across sources, prefer official booking/current operational channel and mention the conflict in prose (still keep `openingHours` values simple if you include them).
 - Keep unknown fields unchanged (PATCH) rather than guessing.
 
-## Step 5: Generate scripts
+## Step 5: Generate the browser script (primary output)
 
-Default output is a browser-console script that uses the user’s authenticated session cookie.
+**Produce a runnable JavaScript file** (see **Purpose** above) that:
+
+- Calls **`GET /api/bike-parks`** to decide **CREATE vs PATCH** (match `name`, or use ids the user gave you).
+- Uses **`fetch(..., { credentials: 'include' })`** so the staff session cookie is sent.
+- Sends **`POST /api/bike-parks`** with `bikeParkCreateBodySchema` fields (plain-text `description`; API wraps HTML). Remember **`POST` does not set `payment`** — follow with **`PATCH /api/bike-parks/:id`** `{ payment: 'paid' | 'free' }` when needed.
+- Sends **`PATCH /api/bike-parks/:id`** with the full set of fields you want to store (PATCH merges; include `trailDifficultyCounts`, logos, `openingHours`, etc.).
 
 Admin/staff auth is required for `POST` and `PATCH`.
+
+Also paste the same script into the chat (or summarize where the file lives) so the user can copy it without hunting the repo.
 
 ### Single park — CREATE (`POST`)
 
@@ -129,7 +177,7 @@ await fetch('/api/bike-parks', {
     description: '…',
     latitude: 0,
     longitude: 0,
-    // optional: website, buyTicketUrl, payment, logoUrl, pinLogoUrl, facilities, trailDifficultyCounts, openingHours
+    // optional: website, buyTicketUrl, payment, logoUrl, pinLogoUrl, facilities, trailDifficultyCounts (required in research output), openingHours
   }),
 }).then(async (r) => ({ status: r.status, body: await r.json().catch(() => null) }));
 ```
@@ -196,11 +244,11 @@ results;
 
 Before any write action by the agent, present:
 
-1. Proposed mapped payload(s), labeled **CREATE** vs **PATCH** per park, including **`logoUrl` / `pinLogoUrl`** when available.
+1. Proposed mapped payload(s), labeled **CREATE** vs **PATCH** per park, including **`trailDifficultyCounts`** (or explicit **all-zero** rationale), **`logoUrl` / `pinLogoUrl`** when available.
 2. Source links used (including where branding assets were taken from).
 3. Any assumptions/conflicts (e.g. single asset reused for both fields, light-on-dark logo, bot-blocked HEAD check).
 
-Then ask for explicit confirmation like: "Confirm and I will apply this update now."
+Then ask for explicit confirmation like: "Confirm and I will add/update the browser script now." (The user runs the script locally; the agent does not run it against production unless the user asks.)
 
 ## Step 7: Post-update verification
 
@@ -211,7 +259,7 @@ After write execution, verify each park with:
 Return a concise diff-style summary:
 
 - Created vs updated rows (and new ids from POST).
-- Updated fields (including **`logoUrl` / `pinLogoUrl`** when patched).
+- Updated fields (including **`trailDifficultyCounts`**, **`logoUrl` / `pinLogoUrl`** when patched).
 - Unchanged fields intentionally left alone (PATCH only).
 - Any failed writes with status/error.
 
@@ -219,9 +267,9 @@ Return a concise diff-style summary:
 
 When replying, structure output as:
 
-1. **Proposed data** (field-value list), with **CREATE** or **PATCH** per park. Include **`logoUrl`** and **`pinLogoUrl`** for each park when you have verified or defensibly official URLs; if genuinely unavailable after checking official sources, say **omitted** and why.
+1. **Proposed data** (field-value list), with **CREATE** or **PATCH** per park. Include **`trailDifficultyCounts`** (per-band counts and how they were derived). Include **`logoUrl`** and **`pinLogoUrl`** for each park when you have verified or defensibly official URLs; if genuinely unavailable after checking official sources, say **omitted** and why.
 2. **Sources** (official first), including **direct links to the pages** where logo/pin assets appear.
-3. **Script** (POST and/or PATCH; single or batch).
-4. **Verification plan/result**.
+3. **Browser script** — the full contents (or path under `.agents/skills/research-bike-park-update-script/browser-scripts/`) of the **`.js`** file to paste into DevTools. Do **not** point the user at `data/bike-parks.seed.json` unless they asked for seed changes.
+4. **Verification plan/result** — after they run the script: `GET /api/bike-parks/:id` or reload the map.
 
 Keep language concise and avoid speculative values.

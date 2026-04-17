@@ -4,11 +4,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
 import type { BikePark } from '@/lib/db/schema';
 import { fetchBikeParksForMap } from '@/lib/bike-parks/fetch-bike-parks-for-map';
-import { replaceBikeParkMarkersOnMap } from '@/components/map/replace-bike-park-markers';
+import type { BikeParkMapPoint } from '@/lib/bike-parks/fetch-bike-parks-for-map';
+import {
+  replaceBikeParkMarkersOnMap,
+  type BikeParkMapMarker,
+} from '@/components/map/replace-bike-park-markers';
 import { ParkDetailPanel } from '@/components/map/park-detail-panel';
 import { MapChrome } from '@/components/map/map-chrome';
 import { Button } from '@/components/ui/button';
 import { MAP_UI_LAYER_Z } from '@/lib/map/map-ui-layers';
+import { formatLocalCalendarDay } from '@/lib/date/local-calendar-day';
+import { fetchMatesOnMapCounts } from '@/lib/social/fetch-mates-on-map';
+import { useAppUser } from '@/lib/hooks/use-app-user';
 
 const UK_CENTER = { lat: 54.2, lng: -2.5 };
 const DEFAULT_ZOOM = 6;
@@ -49,7 +56,8 @@ export function ShredMap({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<google.maps.Marker[]>([]);
+  const markersRef = useRef<BikeParkMapMarker[]>([]);
+  const { data: appUser } = useAppUser();
 
   const [mapReady, setMapReady] = useState(false);
   const [parksError, setParksError] = useState<string | null>(null);
@@ -57,6 +65,7 @@ export function ShredMap({
   const [detail, setDetail] = useState<BikePark | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [desktop, setDesktop] = useState(true);
+  const [rideDay, setRideDay] = useState(() => formatLocalCalendarDay(new Date()));
 
   useEffect(() => {
     if (initialParkId) {
@@ -111,36 +120,51 @@ export function ShredMap({
     return () => controller.abort();
   }, [selectedId]);
 
-  const loadBikeParkMarkers = useCallback(async (signal?: AbortSignal) => {
-    if (!mapRef.current) return;
+  const refreshMapMarkers = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!mapRef.current) return;
 
-    setParksError(null);
+      setParksError(null);
 
-    const result = await fetchBikeParksForMap(signal);
+      const result = await fetchBikeParksForMap(signal);
 
-    if (result.status === 'aborted' || signal?.aborted || !mapRef.current) {
-      return;
-    }
+      if (result.status === 'aborted' || signal?.aborted || !mapRef.current) {
+        return;
+      }
 
-    if (result.status === 'error') {
-      setParksError(result.message);
-      return;
-    }
+      if (result.status === 'error') {
+        setParksError(result.message);
+        return;
+      }
 
-    const map = mapRef.current;
-    replaceBikeParkMarkersOnMap(
-      map,
-      markersRef,
-      result.parks,
-      setSelectedId,
-    );
-  }, []);
+      let parks: BikeParkMapPoint[] = result.parks;
+
+      if (appUser) {
+        try {
+          const counts = await fetchMatesOnMapCounts(rideDay, signal);
+          if (signal?.aborted || !mapRef.current) return;
+          parks = parks.map((p) => ({
+            ...p,
+            matesRidingCount: counts[p.id] ?? 0,
+          }));
+        } catch {
+          if (signal?.aborted || !mapRef.current) return;
+          parks = parks.map((p) => ({ ...p, matesRidingCount: 0 }));
+        }
+      } else {
+        parks = parks.map((p) => ({ ...p, matesRidingCount: 0 }));
+      }
+
+      const map = mapRef.current;
+      replaceBikeParkMarkersOnMap(map, markersRef, parks, setSelectedId);
+    },
+    [appUser, rideDay],
+  );
 
   useEffect(() => {
     if (!containerRef.current || !googleMapsApiKey) return;
 
     let cancelled = false;
-    const ac = new AbortController();
 
     void (async () => {
       setOptions({
@@ -166,17 +190,23 @@ export function ShredMap({
       });
       mapRef.current = map;
       setMapReady(true);
-
-      await loadBikeParkMarkers(ac.signal);
     })();
 
     return () => {
       cancelled = true;
-      ac.abort();
       markersRef.current.forEach((m) => m.setMap(null));
       markersRef.current = [];
+      mapRef.current = null;
+      setMapReady(false);
     };
-  }, [googleMapsApiKey, loadBikeParkMarkers]);
+  }, [googleMapsApiKey]);
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return;
+    const ac = new AbortController();
+    void refreshMapMarkers(ac.signal);
+    return () => ac.abort();
+  }, [mapReady, refreshMapMarkers]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
@@ -221,14 +251,17 @@ export function ShredMap({
             variant="secondary"
             size="sm"
             className="self-start border border-zinc-600 bg-zinc-900 text-white hover:bg-zinc-800"
-            onClick={() => void loadBikeParkMarkers()}
+            onClick={() => void refreshMapMarkers()}
           >
             Try again
           </Button>
         </div>
       )}
 
-      <MapChrome />
+      <MapChrome
+        rideDay={appUser ? rideDay : undefined}
+        onRideDayChange={appUser ? setRideDay : undefined}
+      />
 
       {selectedId && desktop && (
         <div
@@ -244,6 +277,7 @@ export function ShredMap({
               park={detail}
               layout="desktop"
               onClose={closePanel}
+              onRidePlanSaved={() => void refreshMapMarkers()}
             />
           ) : null}
         </div>
@@ -262,6 +296,7 @@ export function ShredMap({
                 park={detail}
                 layout="mobile"
                 onClose={closePanel}
+                onRidePlanSaved={() => void refreshMapMarkers()}
               />
             )
           )}
