@@ -21,7 +21,7 @@
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js **20.9+** (required by Next.js 16)
 - [pnpm](https://pnpm.io/) (recommended) or npm
 - Postgres (local Docker via `pnpm db:setup`, or a hosted URL)
 

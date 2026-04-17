@@ -86,14 +86,14 @@ When in doubt, re-read this file and match existing patterns in the codebase bef
 
 | Service | How to run | Notes |
 |---------|-----------|-------|
-| Next.js dev server | `pnpm dev` | Runs on port 3000 with Turbopack |
+| Next.js dev server | `pnpm dev` | Runs on port 3000 (Turbopack is the default in Next.js 16) |
 | Postgres (Neon) | Hosted — no local setup | Uses `@neondatabase/serverless` HTTP driver; `POSTGRES_URL` env var |
 
 ### Key commands
 
 See `README.md` → Scripts table for all commands. Quick reference:
 
-- **Dev server:** `pnpm dev` (Turbopack, port 3000)
+- **Dev server:** `pnpm dev` (port 3000; Turbopack is on by default)
 - **Type check:** `npx tsc --noEmit`
 - **Tests:** `pnpm test` (Vitest)
 - **Build:** `pnpm build`

@@ -14,5 +14,4 @@ export function proxy(request: NextRequest, event: NextFetchEvent) {
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
-  runtime: 'nodejs',
 };

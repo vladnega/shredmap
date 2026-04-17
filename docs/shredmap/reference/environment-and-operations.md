@@ -17,9 +17,13 @@ Without required WorkOS values, startup fails because `assertWorkOsConfigured()`
 - `OPENAI_API_KEY`, `OPENAI_MODEL` for chat features
 - `ENABLE_E2E_TEST_AUTH`, `TEST_APP_USERNAME`, `TEST_APP_SECRET` for E2E auth bootstrap
 
+## Runtime versions
+
+- **Node.js:** 20.9 or newer (Next.js 16 minimum).
+
 ## Common commands
 
-- Dev server: `pnpm dev`
+- Dev server: `pnpm dev` (Next.js 16 uses Turbopack by default; the `dev` script does not pass `--turbopack`)
 - Type check: `npx tsc --noEmit`
 - Tests: `pnpm test`
 - Build: `pnpm build`
