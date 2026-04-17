@@ -6,6 +6,7 @@ import { X, ExternalLink, MapPin, Pencil } from 'lucide-react';
 import useSWR from 'swr';
 import { TrailDifficultyIcon } from '@/components/bike-parks/trail-difficulty-icon';
 import { Button } from '@/components/ui/button';
+import { ParkReviewSummaryHeader } from '@/components/reviews/park-review-summary-header';
 import { ParkReviewsSection } from '@/components/reviews/park-reviews-section';
 import type { BikePark } from '@/lib/db/schema';
 import { BIKE_PARK_STAFF_ROLE_SLUGS } from '@/lib/auth/bike-park-staff-roles';
@@ -136,6 +137,7 @@ export function ParkDetailPanel({
           <h2 className="text-xl font-bold tracking-tight text-white leading-tight">
             {park.name}
           </h2>
+          <ParkReviewSummaryHeader bikeParkId={park.id} />
         </div>
         <Button
           type="button"

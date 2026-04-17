@@ -21,6 +21,7 @@ Start from this page, then drill into feature docs for behavior and implementati
 
 - Map UI: `components/map/`
 - Bike park API routes: `app/api/bike-parks/`
+- Park review editor (signed-in): `app/(app)/bike-parks/[parkId]/review/`
 - Staff bike park UI: `app/(app)/admin/bike-parks/`
 - Auth and role checks: `lib/auth/`
 - Database schema and queries: `lib/db/schema.ts`, `lib/db/queries.ts`

@@ -42,8 +42,10 @@ const MAP_STYLES: google.maps.MapTypeStyle[] = [
 
 export function ShredMap({
   googleMapsApiKey,
+  initialParkId = null,
 }: {
   googleMapsApiKey: string;
+  initialParkId?: string | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -51,10 +53,16 @@ export function ShredMap({
 
   const [mapReady, setMapReady] = useState(false);
   const [parksError, setParksError] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialParkId);
   const [detail, setDetail] = useState<BikePark | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [desktop, setDesktop] = useState(true);
+
+  useEffect(() => {
+    if (initialParkId) {
+      setSelectedId(initialParkId);
+    }
+  }, [initialParkId]);
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 768px)');

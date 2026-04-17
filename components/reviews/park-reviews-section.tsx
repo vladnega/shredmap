@@ -1,18 +1,20 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import useSWRInfinite from 'swr/infinite';
 import { BIKE_PARK_REVIEW_ROLE_SLUGS } from '@/lib/auth/bike-park-review-roles';
 import { useAppUser } from '@/lib/hooks/use-app-user';
 import { ReviewFilter } from '@/components/reviews/review-filter';
-import { ReviewForm } from '@/components/reviews/review-form';
 import { ReviewsList } from '@/components/reviews/reviews-list';
 import { ReviewsSummary } from '@/components/reviews/reviews-summary';
+import { fetchParkReviewsPage } from '@/components/reviews/fetch-park-reviews-page';
 import type {
   ParkReviewSummary,
   ParkReviewsPageResponse,
 } from '@/components/reviews/review-types';
+import { Button } from '@/components/ui/button';
 
 type WorkOsRolesPayload = { roles: string[] };
 
@@ -27,15 +29,6 @@ function roleFetcher(url: string): Promise<WorkOsRolesPayload> {
   return fetch(url).then((response) => {
     if (!response.ok) throw new Error(String(response.status));
     return response.json() as Promise<WorkOsRolesPayload>;
-  });
-}
-
-function reviewsPageFetcher(url: string): Promise<ParkReviewsPageResponse> {
-  return fetch(url).then(async (response) => {
-    if (!response.ok) {
-      throw new Error(`Failed to load reviews (${response.status})`);
-    }
-    return response.json() as Promise<ParkReviewsPageResponse>;
   });
 }
 
@@ -59,8 +52,6 @@ export function ParkReviewsSection({
   const canWriteReview = getCanWriteReview(roleData?.roles);
 
   const [ratingFilter, setRatingFilter] = useState<number | null>(null);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
   const getKey = useCallback(
     (pageIndex: number, previousPageData: ParkReviewsPageResponse | null) => {
@@ -88,8 +79,7 @@ export function ParkReviewsSection({
     isValidating,
     setSize,
     size,
-    mutate,
-  } = useSWRInfinite<ParkReviewsPageResponse>(getKey, reviewsPageFetcher, {
+  } = useSWRInfinite<ParkReviewsPageResponse>(getKey, fetchParkReviewsPage, {
     revalidateFirstPage: false,
   });
 
@@ -112,58 +102,41 @@ export function ParkReviewsSection({
     void setSize((current) => current + 1);
   }, [hasMore, isLoadingMore, setSize]);
 
-  const handleSubmit = useCallback(
-    async (values: { rating: number; description: string }) => {
-      setSubmitError(null);
-      setSubmitting(true);
-      try {
-        const response = await fetch(`/api/bike-parks/${bikeParkId}/reviews`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(values),
-        });
-        if (!response.ok) {
-          const payload = await response.json().catch(() => ({}));
-          const errorMessage =
-            typeof payload === 'object' &&
-            payload &&
-            'error' in payload &&
-            typeof payload.error === 'string'
-              ? payload.error
-              : `Could not save review (${response.status})`;
-          setSubmitError(errorMessage);
-          return;
-        }
-        await mutate();
-      } catch {
-        setSubmitError('Could not save review right now.');
-      } finally {
-        setSubmitting(false);
-      }
-    },
-    [bikeParkId, mutate],
-  );
+  const reviewEditorHref = `/bike-parks/${bikeParkId}/review`;
 
   return (
-    <section className="mt-8">
+    <section className="mt-8 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
       <ReviewsSummary summary={summary} />
-      <ReviewFilter
-        selectedRating={ratingFilter}
-        summary={summary}
-        onChange={setRatingFilter}
-      />
+      <ReviewFilter selectedRating={ratingFilter} onChange={setRatingFilter} />
 
-      <ReviewForm
-        signedIn={Boolean(user)}
-        canReview={canWriteReview}
-        viewerReview={viewerReview}
-        isSubmitting={submitting}
-        onSubmit={handleSubmit}
-      />
-      {submitError && <p className="mt-2 text-xs text-red-400">{submitError}</p>}
+      <div className="mt-4">
+        {user && canWriteReview && (
+          <Button
+            asChild
+            size="sm"
+            className="rounded-full bg-orange-600 text-white hover:bg-orange-500"
+          >
+            <Link href={reviewEditorHref}>{viewerReview ? 'Edit your review' : 'Write a review'}</Link>
+          </Button>
+        )}
+        {!user && (
+          <p className="text-xs text-zinc-500">
+            <Link href="/sign-in" className="text-orange-400 hover:underline">
+              Sign in
+            </Link>{' '}
+            to post a review.
+          </p>
+        )}
+        {user && !canWriteReview && (
+          <p className="text-xs text-zinc-500">
+            Your account role cannot post reviews yet. Ask an admin to assign the member, moderator,
+            or admin role in WorkOS.
+          </p>
+        )}
+      </div>
 
       {error ? (
-        <p className="mt-4 rounded-xl border border-red-500/40 bg-red-950/20 p-3 text-sm text-red-200">
+        <p className="mt-4 rounded-lg border border-red-500/40 bg-red-950/20 p-3 text-sm text-red-200">
           Could not load reviews right now.
         </p>
       ) : isLoading ? (

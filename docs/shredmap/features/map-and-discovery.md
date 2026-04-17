@@ -3,6 +3,7 @@
 ## User experience
 
 - Public users can open `/` and browse bike parks without signing in.
+- Optional query `?park=<bike-park-id>` opens that park’s detail panel on load (used when returning from the review editor).
 - The homepage is a full-screen map (`100dvh`) with park markers from Postgres.
 - Selecting a marker loads park details in a panel:
   - Mobile: full-screen panel.

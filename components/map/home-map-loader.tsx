@@ -13,8 +13,10 @@ const ShredMap = dynamic(
 
 export function HomeMapLoader({
   googleMapsApiKey,
+  initialParkId = null,
 }: {
   googleMapsApiKey: string;
+  initialParkId?: string | null;
 }) {
-  return <ShredMap googleMapsApiKey={googleMapsApiKey} />;
+  return <ShredMap googleMapsApiKey={googleMapsApiKey} initialParkId={initialParkId} />;
 }

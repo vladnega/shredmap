@@ -17,14 +17,14 @@ export function ReviewsList({
 }) {
   if (reviews.length === 0) {
     return (
-      <p className="mt-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-sm text-zinc-400">
+      <p className="mt-4 text-sm text-zinc-400">
         No reviews yet for this filter. Be the first to share trail and facility details.
       </p>
     );
   }
 
   return (
-    <div className="mt-4 space-y-3">
+    <div className="mt-4 divide-y divide-zinc-800/70">
       {reviews.map((review) => (
         <ReviewCard key={review.id} review={review} />
       ))}

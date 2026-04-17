@@ -58,6 +58,7 @@ The intent is **community maintenance**: the map and directory improve through c
 |------|----------|
 | Map UI | `components/map/` (`shred-map.tsx`, `park-detail-panel.tsx`, `map-chrome.tsx`, `home-map-loader.tsx`) |
 | Bike park API | `app/api/bike-parks/`, staff auth `lib/auth/bike-park-staff.ts`, `lib/db/queries.ts` |
+| Park reviews | `components/reviews/`, `app/(app)/bike-parks/[parkId]/review/`, `app/api/bike-parks/[id]/reviews/` |
 | Staff bike park UI | `app/(app)/admin/bike-parks/` |
 | Schema | `lib/db/schema.ts` — `bikeParks`, `parkReviews`, `users.workOsUserId` |
 | Seed bike parks | `data/bike-parks.seed.json` + `lib/bike-parks/seed-from-json.ts`, invoked from `lib/db/seed.ts` |
@@ -74,7 +75,6 @@ See `.env.example`. Minimum for the full vision:
 
 ## Follow-up work (not necessarily implemented yet)
 
-- Review submission UI and API (authenticated).
 - Richer opening hours editing, image uploads, and moderation workflows.
 When in doubt, re-read this file and match existing patterns in the codebase before introducing new abstractions.
 
