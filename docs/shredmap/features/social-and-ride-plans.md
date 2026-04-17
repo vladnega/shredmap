@@ -13,10 +13,10 @@ Any user with a synced `users` row (WorkOS sign-in) can send and manage mate inv
 | Route | Purpose |
 |-------|---------|
 | `/` | Full-screen map. Signed-in: choose a **day** in the top chrome; pins show how many **mates** plan to ride at each park that day. Opening a park shows **mates riding here** with **each mate’s name and ride date** (today and future plans at that park), plus **I’m riding here** to set your own plan. |
-| `/mates` | Mates hub: **your mates** list (with **where each mate plans to ride** on a chosen calendar day), plus **shareable invite link**. Requires sign-in (`(mates)` layout). |
+| `/mates` | Mates hub: **your mates** list (with **where each mate plans to ride** on a chosen calendar day), plus **shareable invite link**. Signed-out visitors see an explanation and **Sign in** / **Create account** (both return here after AuthKit). |
 | `/mates/join/[token]` | **Public** landing for a shareable invite. Recipients can **sign up** or **sign in** (AuthKit `returnTo` brings them back here), then **become mates** — **no prior account required**. |
 
-The **map chrome** (floating header on the map and mates views) includes a **Map | Mates** switch next to the shredmap branding so you can move between the two.
+The **map chrome** (floating header on the map and mates views) includes a **Map | Mates** switch next to the shredmap branding so you can move between the two. If you are not signed in, **Mates** opens `/mates`, which explains that you need an account and offers **Sign in** or **Create account** (no bare redirect to AuthKit).
 
 ## Mate invites
 
