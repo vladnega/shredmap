@@ -80,6 +80,7 @@ export async function POST(
       longitude: data.longitude,
       primaryCtaUrl: data.website ?? null,
       buyTicketUrl: data.buyTicketUrl ?? null,
+      payment: data.payment,
       logoUrl: data.logoUrl ?? null,
       pinLogoUrl: data.pinLogoUrl ?? null,
       amenities: selectedFacilitiesToAmenities(data.facilities),

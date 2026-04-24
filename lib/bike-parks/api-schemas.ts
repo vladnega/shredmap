@@ -79,6 +79,7 @@ export const bikeParkCreateBodySchema = z.object({
     .refine((n) => n >= -180 && n <= 180, 'longitude out of range'),
   website: optionalUrl.optional(),
   buyTicketUrl: optionalUrl.optional(),
+  payment: z.union([z.literal('paid'), z.literal('free')]).default('free'),
   logoUrl: optionalUrl.optional(),
   pinLogoUrl: optionalUrl.optional(),
   facilities: facilitiesSchema.default([]),

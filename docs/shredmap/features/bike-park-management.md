@@ -17,7 +17,10 @@
 
 - Request payloads are validated with Zod schemas in `lib/bike-parks/api-schemas.ts`.
 - Facilities are controlled slugs and persisted as `amenities`.
+- Create payloads include `payment` (`paid` \| `free`, default `free`) alongside coordinates and optional URLs.
 - Patch requests must include at least one mutable field.
+
+Shared bike-park field UI (staff editor, park requests, and staff request review) lives in `components/bike-parks/fields/bike-park-fields.tsx` so section order and controls stay aligned.
 
 ## Staff UI routes
 

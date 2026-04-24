@@ -35,6 +35,8 @@ export async function ParkRequestsAdminPageContent({
     );
   }
 
+  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
+
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
       <Card className="border-zinc-800 bg-zinc-900/70 text-zinc-100">
@@ -45,7 +47,11 @@ export async function ParkRequestsAdminPageContent({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {mode === 'list' ? <ParkRequestsAdminList /> : requestId ? <ParkRequestReview requestId={requestId} /> : null}
+          {mode === 'list' ? (
+            <ParkRequestsAdminList />
+          ) : requestId ? (
+            <ParkRequestReview requestId={requestId} googleMapsApiKey={googleMapsApiKey} />
+          ) : null}
         </CardContent>
       </Card>
     </div>
