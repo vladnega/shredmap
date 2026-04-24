@@ -1,12 +1,16 @@
 import { AppHeader } from '@/components/app/app-header';
 import { withAuth } from '@workos-inc/authkit-nextjs';
+import { redirect } from 'next/navigation';
 
 export default async function AppGroupLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await withAuth({ ensureSignedIn: true });
+  const auth = await withAuth();
+  if (!auth.user) {
+    redirect('/sign-in');
+  }
 
   return (
     <section className="flex h-screen flex-col bg-zinc-950">

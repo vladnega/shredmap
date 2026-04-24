@@ -18,11 +18,29 @@
 - Do not store authorization roles in Postgres.
 - Runtime role checks read WorkOS session and/or organization memberships.
 
+## App personas (current)
+
+- **Anonymous user** (not signed in): can browse the map, park markers, and park details.
+- **Member** (WorkOS role slug `member`): signed-in community user who can use mates/ride plans and author park reviews.
+- **Admin** (WorkOS role slug `admin`): staff user with all member capabilities plus bike park management access.
+- **Moderator** (WorkOS role slug `moderator`): staff user with all member capabilities plus bike park management access.
+
 ## Role-driven capabilities
 
+- Public map and park discovery: anonymous, member, admin, moderator.
+- Mates and ride plans: member, admin, moderator.
 - Review authoring: `member`, `admin`, or `moderator`.
 - Bike park staff actions: `admin` or `moderator`.
+- Park Request submission: `member`, `admin`, or `moderator`.
+- Park Request review/approval/rejection: `admin` or `moderator`.
 - Missing session returns `401`; signed-in but unauthorized returns `403`.
+
+## Persona-aware design requirements
+
+- New user-facing features should explicitly state which of the four personas can: view, act, and manage.
+- Preserve public read access for anonymous users unless a requirement explicitly says otherwise.
+- Keep privileged write operations limited to `admin`/`moderator` checks in API handlers (never client-only gating).
+- If a feature is signed-in only, document expected unauthenticated behavior (for example: redirect, sign-in CTA, `401`, or read-only fallback).
 
 ## Key implementation files
 
@@ -36,5 +54,6 @@
 ## Related docs
 
 - [Bike park management API and staff UI](./bike-park-management.md)
+- [Park Requests](./park-requests.md)
 - [Park reviews](./reviews.md)
 - [Environment and operations](../reference/environment-and-operations.md)

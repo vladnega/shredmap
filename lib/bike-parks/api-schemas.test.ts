@@ -3,6 +3,7 @@ import {
   bikeParkCreateBodySchema,
   bikeParkPatchBodySchema,
   escapeHtmlForParkDescription,
+  parkRequestCreateBodySchema,
 } from '@/lib/bike-parks/api-schemas';
 
 describe('bikeParkCreateBodySchema', () => {
@@ -141,5 +142,41 @@ describe('escapeHtmlForParkDescription', () => {
     expect(escapeHtmlForParkDescription('<script>x</script>')).toBe(
       '<p>&lt;script&gt;x&lt;/script&gt;</p>',
     );
+  });
+});
+
+describe('parkRequestCreateBodySchema', () => {
+  it('accepts amendment payload', () => {
+    const r = parkRequestCreateBodySchema.safeParse({
+      requestType: 'amendment',
+      targetParkId: '0f5e5f90-9526-4af4-b3d5-2f4d4e334f21',
+      proposedPatch: {
+        name: 'Updated park name',
+      },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('accepts new park payload', () => {
+    const r = parkRequestCreateBodySchema.safeParse({
+      requestType: 'new_park',
+      proposedPatch: {
+        name: 'New Park',
+        description: 'Great riding',
+        latitude: 51,
+        longitude: -1,
+      },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('rejects amendment without target park id', () => {
+    const r = parkRequestCreateBodySchema.safeParse({
+      requestType: 'amendment',
+      proposedPatch: {
+        name: 'Updated park name',
+      },
+    });
+    expect(r.success).toBe(false);
   });
 });

@@ -131,6 +131,26 @@ export const parkReviews = pgTable(
   }),
 );
 
+export const bikeParkRequests = pgTable('bike_park_requests', {
+  id: uuid('id').primaryKey(),
+  requestType: varchar('request_type', { length: 24 }).notNull(),
+  status: varchar('status', { length: 24 }).notNull().default('pending'),
+  requesterUserId: integer('requester_user_id')
+    .notNull()
+    .references(() => users.id),
+  targetParkId: uuid('target_park_id').references(() => bikeParks.id, {
+    onDelete: 'set null',
+  }),
+  proposedPatch: jsonb('proposed_patch').notNull(),
+  reviewedByUserId: integer('reviewed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
+  reviewedAt: timestamp('reviewed_at'),
+  reviewerNotes: text('reviewer_notes'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
 /** Mate requests (distinct from org `invitations`). */
 export const friendInvitations = pgTable('friend_invitations', {
   id: serial('id').primaryKey(),
@@ -202,11 +222,38 @@ export const usersRelations = relations(users, ({ many }) => ({
   organizationMembers: many(organizationMembers),
   invitationsSent: many(invitations),
   parkReviews: many(parkReviews),
+  bikeParkRequestsCreated: many(bikeParkRequests, {
+    relationName: 'bikeParkRequestRequester',
+  }),
+  bikeParkRequestsReviewed: many(bikeParkRequests, {
+    relationName: 'bikeParkRequestReviewer',
+  }),
 }));
 
 export const bikeParksRelations = relations(bikeParks, ({ many }) => ({
   reviews: many(parkReviews),
+  requests: many(bikeParkRequests),
 }));
+
+export const bikeParkRequestsRelations = relations(
+  bikeParkRequests,
+  ({ one }) => ({
+    requester: one(users, {
+      fields: [bikeParkRequests.requesterUserId],
+      references: [users.id],
+      relationName: 'bikeParkRequestRequester',
+    }),
+    reviewer: one(users, {
+      fields: [bikeParkRequests.reviewedByUserId],
+      references: [users.id],
+      relationName: 'bikeParkRequestReviewer',
+    }),
+    targetPark: one(bikeParks, {
+      fields: [bikeParkRequests.targetParkId],
+      references: [bikeParks.id],
+    }),
+  }),
+);
 
 export const parkReviewsRelations = relations(parkReviews, ({ one }) => ({
   bikePark: one(bikeParks, {
@@ -271,6 +318,8 @@ export type BikePark = typeof bikeParks.$inferSelect;
 export type NewBikePark = typeof bikeParks.$inferInsert;
 export type ParkReview = typeof parkReviews.$inferSelect;
 export type NewParkReview = typeof parkReviews.$inferInsert;
+export type BikeParkRequest = typeof bikeParkRequests.$inferSelect;
+export type NewBikeParkRequest = typeof bikeParkRequests.$inferInsert;
 export type FriendInvitation = typeof friendInvitations.$inferSelect;
 export type NewFriendInvitation = typeof friendInvitations.$inferInsert;
 export type Friendship = typeof friendships.$inferSelect;

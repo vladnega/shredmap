@@ -3,10 +3,12 @@ import { db } from './drizzle';
 import {
   activityLogs,
   bikeParks,
+  bikeParkRequests,
   catalogItems,
   organizationMembers,
   parkReviews,
   users,
+  type BikeParkRequest,
   type NewBikePark,
 } from './schema';
 import { withAuth } from '@workos-inc/authkit-nextjs';
@@ -168,6 +170,133 @@ export async function updateBikeParkById(
 export async function deleteBikeParkById(id: string) {
   const deleted = await db.delete(bikeParks).where(eq(bikeParks.id, id)).returning({ id: bikeParks.id });
   return deleted[0] ?? null;
+}
+
+export type ParkRequestType = 'amendment' | 'new_park';
+export type ParkRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export async function createBikeParkRequest(row: {
+  id: string;
+  requestType: ParkRequestType;
+  requesterUserId: number;
+  targetParkId?: string | null;
+  proposedPatch: unknown;
+}) {
+  const inserted = await db
+    .insert(bikeParkRequests)
+    .values({
+      id: row.id,
+      requestType: row.requestType,
+      requesterUserId: row.requesterUserId,
+      targetParkId: row.targetParkId ?? null,
+      proposedPatch: row.proposedPatch,
+      status: 'pending',
+    })
+    .returning();
+  return inserted[0] ?? null;
+}
+
+export async function listBikeParkRequests(options?: {
+  status?: ParkRequestStatus;
+  requesterUserId?: number;
+}) {
+  const whereClauses = [];
+  if (options?.status) {
+    whereClauses.push(eq(bikeParkRequests.status, options.status));
+  }
+  if (options?.requesterUserId !== undefined) {
+    whereClauses.push(eq(bikeParkRequests.requesterUserId, options.requesterUserId));
+  }
+
+  return db
+    .select({
+      id: bikeParkRequests.id,
+      requestType: bikeParkRequests.requestType,
+      status: bikeParkRequests.status,
+      targetParkId: bikeParkRequests.targetParkId,
+      targetParkName: bikeParks.name,
+      proposedPatch: bikeParkRequests.proposedPatch,
+      requesterUserId: bikeParkRequests.requesterUserId,
+      reviewedByUserId: bikeParkRequests.reviewedByUserId,
+      reviewedAt: bikeParkRequests.reviewedAt,
+      reviewerNotes: bikeParkRequests.reviewerNotes,
+      createdAt: bikeParkRequests.createdAt,
+      updatedAt: bikeParkRequests.updatedAt,
+      requesterName: users.name,
+      requesterEmail: users.email,
+    })
+    .from(bikeParkRequests)
+    .innerJoin(users, eq(users.id, bikeParkRequests.requesterUserId))
+    .leftJoin(bikeParks, eq(bikeParks.id, bikeParkRequests.targetParkId))
+    .where(whereClauses.length > 0 ? and(...whereClauses) : undefined)
+    .orderBy(desc(bikeParkRequests.createdAt));
+}
+
+export async function getBikeParkRequestById(id: string): Promise<BikeParkRequest | null> {
+  const rows = await db
+    .select()
+    .from(bikeParkRequests)
+    .where(eq(bikeParkRequests.id, id))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function updateBikeParkRequestPatchById(
+  id: string,
+  proposedPatch: unknown,
+) {
+  const updated = await db
+    .update(bikeParkRequests)
+    .set({
+      proposedPatch,
+      updatedAt: sql`now()`,
+    })
+    .where(
+      and(
+        eq(bikeParkRequests.id, id),
+        eq(bikeParkRequests.status, 'pending'),
+      ),
+    )
+    .returning();
+  return updated[0] ?? null;
+}
+
+export async function markBikeParkRequestApproved(input: {
+  id: string;
+  reviewerUserId: number;
+  reviewerNotes?: string | null;
+}) {
+  const updated = await db
+    .update(bikeParkRequests)
+    .set({
+      status: 'approved',
+      reviewedByUserId: input.reviewerUserId,
+      reviewedAt: sql`now()`,
+      reviewerNotes: input.reviewerNotes ?? null,
+      updatedAt: sql`now()`,
+    })
+    .where(and(eq(bikeParkRequests.id, input.id), eq(bikeParkRequests.status, 'pending')))
+    .returning();
+  return updated[0] ?? null;
+}
+
+export async function markBikeParkRequestRejected(input: {
+  id: string;
+  reviewerUserId: number;
+  reviewerNotes?: string | null;
+}) {
+  const updated = await db
+    .update(bikeParkRequests)
+    .set({
+      status: 'rejected',
+      reviewedByUserId: input.reviewerUserId,
+      reviewedAt: sql`now()`,
+      reviewerNotes: input.reviewerNotes ?? null,
+      updatedAt: sql`now()`,
+    })
+    .where(and(eq(bikeParkRequests.id, input.id), eq(bikeParkRequests.status, 'pending')))
+    .returning();
+  return updated[0] ?? null;
 }
 
 function formatReviewerDisplayName(

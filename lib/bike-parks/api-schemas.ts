@@ -134,6 +134,40 @@ export const bikeParkPatchBodySchema = z
 
 export type BikeParkPatchBody = z.infer<typeof bikeParkPatchBodySchema>;
 
+export const parkRequestTypeSchema = z.union([
+  z.literal('amendment'),
+  z.literal('new_park'),
+]);
+
+export const parkRequestStatusSchema = z.union([
+  z.literal('pending'),
+  z.literal('approved'),
+  z.literal('rejected'),
+]);
+
+const bikeParkAmendmentRequestBodySchema = z.object({
+  requestType: z.literal('amendment'),
+  targetParkId: z.string().uuid(),
+  proposedPatch: bikeParkPatchBodySchema,
+});
+
+const bikeParkNewParkRequestBodySchema = z.object({
+  requestType: z.literal('new_park'),
+  proposedPatch: bikeParkCreateBodySchema,
+});
+
+export const parkRequestCreateBodySchema = z.union([
+  bikeParkAmendmentRequestBodySchema,
+  bikeParkNewParkRequestBodySchema,
+]);
+
+export const parkRequestPatchBodySchema = z.object({
+  proposedPatch: z.union([bikeParkCreateBodySchema, bikeParkPatchBodySchema]),
+});
+
+export type ParkRequestCreateBody = z.infer<typeof parkRequestCreateBodySchema>;
+export type ParkRequestPatchBody = z.infer<typeof parkRequestPatchBodySchema>;
+
 const reviewDescriptionValidationMessage =
   'Tell riders what trails or facilities stood out on your visit.';
 

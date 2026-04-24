@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
+import { googleMapsEmbedUrl } from '@/lib/map/google-maps-embed';
 
 const PICKER_STYLES: google.maps.MapTypeStyle[] = [
   { elementType: 'geometry', stylers: [{ color: '#1d2c4d' }] },
@@ -140,9 +141,22 @@ export function BikeParkLocationPicker({
 
   if (!googleMapsApiKey) {
     return (
-      <p className="text-sm text-zinc-500">
-        Set <code className="text-orange-300">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> to use the map pin picker.
-      </p>
+      <div className="space-y-2">
+        <p className="text-xs text-zinc-500">
+          Embedded map preview (no API key). Set{' '}
+          <code className="text-orange-300">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> for the
+          interactive pin picker (drag marker / click map).
+        </p>
+        <div className="relative h-64 w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+          <iframe
+            title="Bike park location preview"
+            src={googleMapsEmbedUrl(latitude, longitude)}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            className="absolute inset-0 h-full w-full border-0"
+          />
+        </div>
+      </div>
     );
   }
 

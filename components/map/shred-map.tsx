@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
+import { Plus } from 'lucide-react';
 import type { BikePark } from '@/lib/db/schema';
 import { fetchBikeParksForMap } from '@/lib/bike-parks/fetch-bike-parks-for-map';
 import type { BikeParkMapPoint } from '@/lib/bike-parks/fetch-bike-parks-for-map';
@@ -262,6 +264,21 @@ export function ShredMap({
         rideDay={appUser ? rideDay : undefined}
         onRideDayChange={appUser ? setRideDay : undefined}
       />
+
+      <div
+        className="pointer-events-auto fixed bottom-4 left-4 sm:bottom-6 sm:left-6"
+        style={{ zIndex: MAP_UI_LAYER_Z.mapChrome }}
+      >
+        <Button
+          asChild
+          size="icon"
+          className="h-12 w-12 rounded-full bg-orange-600 text-white shadow-lg shadow-orange-900/40 hover:bg-orange-500"
+        >
+          <Link href="/bike-parks/park-request/new" aria-label="Propose new park">
+            <Plus className="h-6 w-6" />
+          </Link>
+        </Button>
+      </div>
 
       {selectedId && desktop && (
         <div

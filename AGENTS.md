@@ -28,6 +28,13 @@ This document captures the **product vision** and **technical guardrails** for a
 - **User sync**: OAuth callback runs `syncWorkOsUserToDatabase` so every WorkOS user gets a row in `users` (`work_os_user_id`) for app data (reviews, linking, etc.).
 - **AuthZ ownership**: WorkOS is the source of truth for roles and permissions. Do not store user authorization roles in Postgres; resolve them from WorkOS (session and/or WorkOS membership APIs) at request time.
 
+### Personas (current)
+
+- **Anonymous user**: not signed in; can browse the public map and park details.
+- **Member** (`member`): signed-in user; can use mates/ride-plans and author park reviews.
+- **Admin** (`admin`): staff user; includes member capabilities plus bike park create/edit/delete.
+- **Moderator** (`moderator`): staff user; includes member capabilities plus bike park create/edit/delete.
+
 ### Logged-in capabilities (vision)
 
 | Capability | Who |
@@ -35,6 +42,8 @@ This document captures the **product vision** and **technical guardrails** for a
 | **Mates, ride plans, map mate overlay** | Any signed-in user with a synced `users` row (`/mates`, `/api/friends`, `/api/ride-plans`) |
 | **Post reviews** for a park | WorkOS roles `member`, `admin`, or `moderator` |
 | **Add / edit / delete bike parks** | **Admin** or **moderator** WorkOS role slugs (see `lib/auth/bike-park-staff-roles.ts`; enforced on API routes) |
+| **Submit Park Requests (PRs)** for park amendments/new parks | WorkOS roles `member`, `admin`, or `moderator` |
+| **Review Park Requests (PRs)** and approve/reject/apply | **Admin** or **moderator** WorkOS role slugs |
 
 The intent is **community maintenance**: the map and directory improve through contributions, with trusted moderators curating structure and quality.
 
@@ -44,6 +53,7 @@ The intent is **community maintenance**: the map and directory improve through c
 - **Do not** require login for viewing the map or park details.
 - **Prefer mobile UX** when tradeoffs appear between phone and desktop.
 - **Keep changes focused** on the requested task; avoid drive-by refactors across unrelated boilerplate unless the task requires it.
+- For new behavior, verify persona impact explicitly: what anonymous users can still do, what `member` can do, and what stays staff-only (`admin`/`moderator`).
 
 ### Integration guardrails (agents)
 
@@ -62,6 +72,7 @@ The intent is **community maintenance**: the map and directory improve through c
 | Bike park API | `app/api/bike-parks/`, staff auth `lib/auth/bike-park-staff.ts`, `lib/db/queries.ts` |
 | Park reviews | `components/reviews/`, `app/(app)/bike-parks/[parkId]/review/`, `app/api/bike-parks/[id]/reviews/` |
 | Staff bike park UI | `app/(app)/admin/bike-parks/` |
+| Park Requests | `components/park-requests/`, `components/admin/park-request-review.tsx`, `app/(app)/admin/park-requests/`, `app/api/park-requests/`, `app/api/admin/park-requests/` |
 | Schema | `lib/db/schema.ts` — `bikeParks`, `parkReviews`, `friendInvitations`, `friendships`, `mateInviteLinks`, `ridePlans`, `users.workOsUserId` |
 | Seed bike parks | `data/bike-parks.seed.json` + `lib/bike-parks/seed-from-json.ts`, invoked from `lib/db/seed.ts` |
 | WorkOS callback | `app/callback/route.ts`, `lib/auth/sync-workos-user.ts` |
