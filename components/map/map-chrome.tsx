@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -136,9 +137,11 @@ export type MapChromeProps = {
   /** YYYY-MM-DD when signed in on the map; drives mate overlay and ride plan CTA. */
   rideDay?: string;
   onRideDayChange?: (next: string) => void;
+  /** Optional map-only control rendered below the day picker (e.g. park search). */
+  search?: ReactNode;
 };
 
-export function MapChrome({ rideDay, onRideDayChange }: MapChromeProps = {}) {
+export function MapChrome({ rideDay, onRideDayChange, search }: MapChromeProps = {}) {
   const pathname = usePathname();
   const { data: user, isLoading } = useAppUser();
   const { data: roleData } = useSWR<WorkOsRolesPayload>(
@@ -156,7 +159,7 @@ export function MapChrome({ rideDay, onRideDayChange }: MapChromeProps = {}) {
       className="pointer-events-none fixed left-0 right-0 top-0 flex items-start justify-between gap-2 p-3 sm:p-4"
       style={{ zIndex: MAP_UI_LAYER_Z.mapChrome }}
     >
-      <div className="pointer-events-auto flex max-w-[min(100%,28rem)] flex-wrap items-center gap-2 sm:max-w-none">
+      <div className="pointer-events-auto flex max-w-[min(100%,28rem)] flex-col items-start gap-2 sm:max-w-none">
         <div className="flex items-center gap-2 rounded-full border border-zinc-800/80 bg-zinc-950/90 py-2 pl-3 pr-2 shadow-lg shadow-black/40 backdrop-blur-md">
           <Mountain className="h-6 w-6 shrink-0 text-orange-500" aria-hidden />
           <span className="hidden text-lg font-black tracking-tight text-white sm:inline">
@@ -201,6 +204,8 @@ export function MapChrome({ rideDay, onRideDayChange }: MapChromeProps = {}) {
             />
           </label>
         ) : null}
+
+        {onMapHome && search ? search : null}
       </div>
 
       <div className="pointer-events-auto shrink-0">

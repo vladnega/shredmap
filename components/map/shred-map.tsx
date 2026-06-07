@@ -8,11 +8,15 @@ import type { BikePark } from '@/lib/db/schema';
 import { fetchBikeParksForMap } from '@/lib/bike-parks/fetch-bike-parks-for-map';
 import type { BikeParkMapPoint } from '@/lib/bike-parks/fetch-bike-parks-for-map';
 import {
+  createEmptyBikeParkMarkerRegistry,
   replaceBikeParkMarkersOnMap,
-  type BikeParkMapMarker,
+  type BikeParkMarkerRegistry,
 } from '@/components/map/replace-bike-park-markers';
 import { ParkDetailPanel } from '@/components/map/park-detail-panel';
 import { MapChrome } from '@/components/map/map-chrome';
+import { ParkSearch } from '@/components/map/park-search/park-search';
+import { flyMapToPark } from '@/lib/map/fly-map-to-park';
+import { highlightBikeParkMarker } from '@/lib/map/highlight-bike-park-marker';
 import { Button } from '@/components/ui/button';
 import { MAP_UI_LAYER_Z } from '@/lib/map/map-ui-layers';
 import { formatLocalCalendarDay } from '@/lib/date/local-calendar-day';
@@ -58,7 +62,8 @@ export function ShredMap({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<BikeParkMapMarker[]>([]);
+  const markersRef = useRef<BikeParkMarkerRegistry>(createEmptyBikeParkMarkerRegistry());
+  const [mapParks, setMapParks] = useState<BikeParkMapPoint[]>([]);
   const { data: appUser } = useAppUser();
 
   const [mapReady, setMapReady] = useState(false);
@@ -158,7 +163,11 @@ export function ShredMap({
       }
 
       const map = mapRef.current;
-      replaceBikeParkMarkersOnMap(map, markersRef, parks, setSelectedId);
+      replaceBikeParkMarkersOnMap(map, markersRef, parks, (id) => {
+        highlightBikeParkMarker(markersRef.current, id);
+        setSelectedId(id);
+      });
+      setMapParks(parks);
     },
     [appUser, rideDay],
   );
@@ -196,8 +205,8 @@ export function ShredMap({
 
     return () => {
       cancelled = true;
-      markersRef.current.forEach((m) => m.setMap(null));
-      markersRef.current = [];
+      markersRef.current.markers.forEach((m) => m.setMap(null));
+      markersRef.current = createEmptyBikeParkMarkerRegistry();
       mapRef.current = null;
       setMapReady(false);
     };
@@ -219,6 +228,16 @@ export function ShredMap({
   }, [mapReady, desktop]);
 
   const closePanel = useCallback(() => {
+    highlightBikeParkMarker(markersRef.current, null);
+    setSelectedId(null);
+    setDetail(null);
+  }, []);
+
+  const handleSearchSelectPark = useCallback((park: BikeParkMapPoint) => {
+    const map = mapRef.current;
+    if (!map) return;
+    flyMapToPark(map, park);
+    highlightBikeParkMarker(markersRef.current, park.id);
     setSelectedId(null);
     setDetail(null);
   }, []);
@@ -263,6 +282,13 @@ export function ShredMap({
       <MapChrome
         rideDay={appUser ? rideDay : undefined}
         onRideDayChange={appUser ? setRideDay : undefined}
+        search={
+          <ParkSearch
+            parks={mapParks}
+            disabled={!mapReady || mapParks.length === 0}
+            onSelectPark={handleSearchSelectPark}
+          />
+        }
       />
 
       <div

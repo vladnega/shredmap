@@ -14,6 +14,17 @@ function defaultOrangeCircle(): google.maps.Symbol {
   };
 }
 
+function highlightedOrangeCircle(): google.maps.Symbol {
+  return {
+    path: google.maps.SymbolPath.CIRCLE,
+    fillColor: '#fb923c',
+    fillOpacity: 1,
+    strokeColor: '#fff7ed',
+    strokeWeight: 3,
+    scale: 16,
+  };
+}
+
 /**
  * Round logo “pin” built from DOM (CSS clip). Works for cross-origin images where
  * canvas `toDataURL` would taint and fail — unlike bitmap Marker icons.
@@ -25,6 +36,7 @@ function createRoundLogoRoot(logoUrl: string, mates: number, title: string): HTM
   root.style.height = `${MARKER_ICON_SIZE}px`;
   root.style.cursor = 'pointer';
   root.style.touchAction = 'manipulation';
+  root.style.transition = 'transform 150ms ease, filter 150ms ease';
   root.title = title;
   root.setAttribute('role', 'button');
   root.tabIndex = 0;
@@ -82,7 +94,7 @@ type LogoOverlayConstructor = new (
   mates: number,
   title: string,
   onClick: () => void,
-) => google.maps.OverlayView;
+) => google.maps.OverlayView & { setHighlighted: (highlight: boolean) => void };
 
 /** Defined on first use so this module can load before `importLibrary('maps')` sets `google`. */
 let bikeParkLogoOverlayClass: LogoOverlayConstructor | undefined;
@@ -91,6 +103,8 @@ function getBikeParkLogoOverlayClass(): LogoOverlayConstructor {
   if (!bikeParkLogoOverlayClass) {
     bikeParkLogoOverlayClass = class BikeParkLogoOverlay extends google.maps.OverlayView {
       private readonly root: HTMLDivElement;
+      private readonly matesCount: number;
+      private highlighted = false;
 
       constructor(
         private readonly latLng: google.maps.LatLngLiteral,
@@ -100,6 +114,7 @@ function getBikeParkLogoOverlayClass(): LogoOverlayConstructor {
         onClick: () => void,
       ) {
         super();
+        this.matesCount = mates;
         this.root = createRoundLogoRoot(logoUrl, mates, title);
         const handler = (e: Event) => {
           e.stopPropagation();
@@ -112,6 +127,20 @@ function getBikeParkLogoOverlayClass(): LogoOverlayConstructor {
             onClick();
           }
         });
+      }
+
+      setHighlighted(highlight: boolean): void {
+        this.highlighted = highlight;
+        if (highlight) {
+          this.root.style.transform = 'scale(1.25)';
+          this.root.style.filter =
+            'drop-shadow(0 0 6px rgba(249, 115, 22, 0.95)) drop-shadow(0 0 14px rgba(234, 88, 12, 0.75))';
+          this.root.style.zIndex = '1000';
+        } else {
+          this.root.style.transform = '';
+          this.root.style.filter = '';
+          this.root.style.zIndex = this.matesCount > 0 ? '900' : '';
+        }
       }
 
       onAdd(): void {
@@ -129,8 +158,10 @@ function getBikeParkLogoOverlayClass(): LogoOverlayConstructor {
         );
         if (!point) return;
         const o = MARKER_ICON_SIZE / 2;
-        this.root.style.left = `${point.x - o}px`;
-        this.root.style.top = `${point.y - o}px`;
+        const scale = this.highlighted ? 1.25 : 1;
+        const offset = (MARKER_ICON_SIZE * scale) / 2;
+        this.root.style.left = `${point.x - offset}px`;
+        this.root.style.top = `${point.y - offset}px`;
       }
 
       onRemove(): void {
@@ -143,20 +174,39 @@ function getBikeParkLogoOverlayClass(): LogoOverlayConstructor {
 
 export type BikeParkMapMarker = google.maps.Marker | google.maps.OverlayView;
 
+export type BikeParkMarkerRegistry = {
+  markers: BikeParkMapMarker[];
+  byParkId: Map<string, BikeParkMapMarker>;
+  highlightedParkId: string | null;
+};
+
+export function createEmptyBikeParkMarkerRegistry(): BikeParkMarkerRegistry {
+  return {
+    markers: [],
+    byParkId: new Map(),
+    highlightedParkId: null,
+  };
+}
+
 /**
  * Clears existing markers and attaches one Google Maps marker per park.
  * Keeps imperative map work out of the React component.
  */
 export function replaceBikeParkMarkersOnMap(
   map: google.maps.Map,
-  markersRef: MutableRefObject<BikeParkMapMarker[]>,
+  registryRef: MutableRefObject<BikeParkMarkerRegistry>,
   parks: readonly BikeParkMapPoint[],
   onMarkerClick: (id: string) => void,
 ): void {
-  markersRef.current.forEach((m) => {
+  registryRef.current.markers.forEach((m) => {
     m.setMap(null);
   });
-  markersRef.current = [];
+
+  const registry: BikeParkMarkerRegistry = {
+    markers: [],
+    byParkId: new Map(),
+    highlightedParkId: null,
+  };
 
   for (const p of parks) {
     const mates = p.matesRidingCount ?? 0;
@@ -177,7 +227,8 @@ export function replaceBikeParkMarkersOnMap(
         },
       );
       overlay.setMap(map);
-      markersRef.current.push(overlay);
+      registry.markers.push(overlay);
+      registry.byParkId.set(p.id, overlay);
       continue;
     }
 
@@ -202,6 +253,24 @@ export function replaceBikeParkMarkersOnMap(
       onMarkerClick(p.id);
     });
 
-    markersRef.current.push(marker);
+    registry.markers.push(marker);
+    registry.byParkId.set(p.id, marker);
+  }
+
+  registryRef.current = registry;
+}
+
+/** Updates circle markers to a larger highlighted icon when search selects a park. */
+export function setCircleMarkerSearchHighlight(
+  marker: google.maps.Marker,
+  highlight: boolean,
+): void {
+  marker.setIcon(highlight ? highlightedOrangeCircle() : defaultOrangeCircle());
+  if (highlight) {
+    marker.setAnimation(google.maps.Animation.BOUNCE);
+    marker.setZIndex(1000);
+  } else {
+    marker.setAnimation(null);
+    marker.setZIndex(null);
   }
 }
