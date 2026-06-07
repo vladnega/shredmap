@@ -93,30 +93,6 @@ export function AppHeader() {
             shredmap
           </span>
         </Link>
-        <nav className="flex items-center gap-1 order-3 sm:order-2 w-full sm:w-auto justify-center sm:justify-start">
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="rounded-full text-zinc-200 hover:bg-zinc-800 hover:text-white"
-          >
-            <Link href="/">
-              <Map className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Map</span>
-            </Link>
-          </Button>
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="rounded-full text-zinc-200 hover:bg-zinc-800 hover:text-white"
-          >
-            <Link href="/admin">
-              <ShieldCheck className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Admin</span>
-            </Link>
-          </Button>
-        </nav>
         <div className="order-2 sm:order-3 flex items-center justify-end shrink-0">
           <Suspense fallback={<div className="h-9 w-9" />}>
             <UserMenu />

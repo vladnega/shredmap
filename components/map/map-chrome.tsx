@@ -6,13 +6,10 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   LogOut,
-  Map,
-  MapPin,
   Menu,
   Mountain,
   ShieldCheck,
   UserCircle2,
-  Users,
 } from 'lucide-react';
 import useSWR from 'swr';
 import { useAppUser } from '@/lib/hooks/use-app-user';
@@ -85,18 +82,6 @@ function LoggedInMapMenu({
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-zinc-700/80" />
         <DropdownMenuItem className="rounded-xl px-2 py-2 text-zinc-100 focus:bg-zinc-800 focus:text-white">
-          <Link href="/" className="flex w-full items-center gap-2">
-            <Map className="h-4 w-4 text-orange-400" />
-            <span>Map</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem className="rounded-xl px-2 py-2 text-zinc-100 focus:bg-zinc-800 focus:text-white">
-          <Link href="/mates" className="flex w-full items-center gap-2">
-            <Users className="h-4 w-4 text-orange-400" />
-            <span>Mates</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem className="rounded-xl px-2 py-2 text-zinc-100 focus:bg-zinc-800 focus:text-white">
           <Link href="/account" className="flex w-full items-center gap-2">
             <UserCircle2 className="h-4 w-4 text-orange-400" />
             <span>Account</span>
@@ -108,14 +93,6 @@ function LoggedInMapMenu({
             <span>Admin</span>
           </Link>
         </DropdownMenuItem>
-        {showBikeParkAdmin ? (
-          <DropdownMenuItem className="rounded-xl px-2 py-2 text-zinc-100 focus:bg-zinc-800 focus:text-white">
-            <Link href="/admin/bike-parks" className="flex w-full items-center gap-2">
-              <MapPin className="h-4 w-4 text-orange-400" />
-              <span>Manage parks</span>
-            </Link>
-          </DropdownMenuItem>
-        ) : null}
         <DropdownMenuSeparator className="bg-zinc-700/80" />
         <DropdownMenuItem
           onSelect={() => {
