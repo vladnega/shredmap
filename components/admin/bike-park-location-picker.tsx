@@ -25,6 +25,9 @@ const PICKER_STYLES: google.maps.MapTypeStyle[] = [
   },
 ];
 
+const MAP_CONTAINER_CLASSNAME =
+  'relative h-[60dvh] w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900';
+
 type BikeParkLocationPickerProps = {
   googleMapsApiKey: string;
   latitude: number;
@@ -147,7 +150,7 @@ export function BikeParkLocationPicker({
           <code className="text-orange-300">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> for the
           interactive pin picker (drag marker / click map).
         </p>
-        <div className="relative h-64 w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+        <div className={MAP_CONTAINER_CLASSNAME}>
           <iframe
             title="Bike park location preview"
             src={googleMapsEmbedUrl(latitude, longitude)}
@@ -165,7 +168,7 @@ export function BikeParkLocationPicker({
       <p className="text-xs text-zinc-500">
         Click the map or drag the pin to set coordinates (also editable in the fields above).
       </p>
-      <div className="relative h-64 w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+      <div className={MAP_CONTAINER_CLASSNAME}>
         <div
           ref={containerRef}
           className="absolute inset-0 h-full w-full"

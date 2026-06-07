@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import useSWR from 'swr';
+import { BikeParkReadOnlyBody } from '@/components/bike-parks/bike-park-read-only-body';
 import { BikeParkFields, type BikeParkFieldsReviewConfig } from '@/components/bike-parks/fields/bike-park-fields';
+import { ParkRequestListingPreview } from '@/components/park-requests/park-request-listing-preview';
+import { ParkReviewSummaryHeader } from '@/components/reviews/park-review-summary-header';
 import { Button } from '@/components/ui/button';
 import { buildProposedPatchToPersistForParkRequest } from '@/lib/bike-parks/park-form-normalization';
 import { applyProposedPatchToFormFields } from '@/lib/bike-parks/park-request-patch-form';
@@ -150,75 +153,112 @@ export function ParkRequestReview({
 
   const requestTypeLabel =
     parkRequest.requestType === 'new_park' ? 'New park proposal' : 'Park amendment';
+  const targetPark = data?.targetPark ?? null;
+  const isAmendment = parkRequest.requestType === 'amendment';
+
+  const previewPanel = (
+    <aside className="w-full lg:sticky lg:top-4 lg:self-start">
+      <div className="rounded-xl border border-zinc-800 bg-zinc-950/95 p-4 shadow-xl backdrop-blur-sm">
+        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          {isAmendment && targetPark ? 'Current Shredmap listing' : 'Listing preview'}
+        </p>
+        {isAmendment && targetPark ? (
+          <>
+            <h2 className="mt-2 text-lg font-bold tracking-tight text-white">{targetPark.name}</h2>
+            <ParkReviewSummaryHeader bikeParkId={targetPark.id} />
+            <BikeParkReadOnlyBody park={targetPark} showStaticLocationMap />
+          </>
+        ) : (
+          <ParkRequestListingPreview
+            name={activeFields.name}
+            descriptionPlain={activeFields.description}
+            latitude={activeFields.latitude}
+            longitude={activeFields.longitude}
+            logoUrl={activeFields.logoUrl}
+            website={activeFields.website}
+            buyTicketUrl={activeFields.buyTicketUrl}
+            requiresPayment={activeFields.requiresPayment}
+            openingHours={activeFields.openingHours}
+            trailDifficultyCounts={activeFields.trailDifficultyCounts}
+            facilitySlugs={activeFields.facilities}
+          />
+        )}
+      </div>
+    </aside>
+  );
 
   return (
-    <div className="space-y-6">
-      <section className="flex items-start justify-between gap-3 px-1">
-        <p className="text-sm text-zinc-400">{requestTypeLabel}</p>
-        <span
-          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
-            parkRequest.status === 'pending'
-              ? 'bg-amber-500/20 text-amber-200'
-              : parkRequest.status === 'approved'
-                ? 'bg-emerald-500/20 text-emerald-200'
-                : 'bg-red-500/20 text-red-200'
-          }`}
-        >
-          {parkRequest.status}
-        </span>
-      </section>
+    <div className="flex w-full flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start lg:gap-10">
+      {previewPanel}
 
-      {parkRequest.status === 'pending' ? (
-        <BikeParkFields
-          idPrefix={`prq-${parkRequest.id}`}
-          value={activeFields}
-          onChange={setFormFields}
-          googleMapsApiKey={googleMapsApiKey}
-          showLocationPicker
-          showTrailDifficultyPills
-          urlInputsAsUrl
-          disabled={busy}
-          review={reviewConfig}
-        />
-      ) : (
-        <BikeParkFields
-          idPrefix={`prq-${parkRequest.id}-resolved`}
-          value={mergedFromRequest}
-          onChange={() => {}}
-          googleMapsApiKey={googleMapsApiKey}
-          showLocationPicker
-          showTrailDifficultyPills
-          urlInputsAsUrl
-          disabled={true}
-        />
-      )}
+      <div className="w-full min-w-0 max-w-2xl space-y-6 lg:max-w-none">
+        <section className="flex items-start justify-between gap-3">
+          <p className="text-sm text-zinc-400">{requestTypeLabel}</p>
+          <span
+            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+              parkRequest.status === 'pending'
+                ? 'bg-amber-500/20 text-amber-200'
+                : parkRequest.status === 'approved'
+                  ? 'bg-emerald-500/20 text-emerald-200'
+                  : 'bg-red-500/20 text-red-200'
+            }`}
+          >
+            {parkRequest.status}
+          </span>
+        </section>
 
-      {parkRequest.status === 'pending' ? (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              disabled={busy}
-              className="w-full bg-emerald-600 text-white hover:bg-emerald-500"
-              onClick={() => void resolve('approve')}
-            >
-              Approve
-            </Button>
-            <Button
-              type="button"
-              disabled={busy}
-              variant="destructive"
-              className="w-full"
-              onClick={() => void resolve('reject')}
-            >
-              Reject
-            </Button>
+        {parkRequest.status === 'pending' ? (
+          <BikeParkFields
+            idPrefix={`prq-${parkRequest.id}`}
+            value={activeFields}
+            onChange={setFormFields}
+            googleMapsApiKey={googleMapsApiKey}
+            showLocationPicker
+            showTrailDifficultyPills
+            urlInputsAsUrl
+            disabled={busy}
+            review={reviewConfig}
+          />
+        ) : (
+          <BikeParkFields
+            idPrefix={`prq-${parkRequest.id}-resolved`}
+            value={mergedFromRequest}
+            onChange={() => {}}
+            googleMapsApiKey={googleMapsApiKey}
+            showLocationPicker
+            showTrailDifficultyPills
+            urlInputsAsUrl
+            disabled={true}
+          />
+        )}
+
+        {parkRequest.status === 'pending' ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                disabled={busy}
+                className="w-full bg-emerald-600 text-white hover:bg-emerald-500"
+                onClick={() => void resolve('approve')}
+              >
+                Approve
+              </Button>
+              <Button
+                type="button"
+                disabled={busy}
+                variant="destructive"
+                className="w-full"
+                onClick={() => void resolve('reject')}
+              >
+                Reject
+              </Button>
+            </div>
+            {message ? <p className="text-xs text-zinc-300">{message}</p> : null}
           </div>
-          {message ? <p className="text-xs text-zinc-300">{message}</p> : null}
-        </div>
-      ) : (
-        <p className="text-sm text-zinc-400">This Park Request is already resolved.</p>
-      )}
+        ) : (
+          <p className="text-sm text-zinc-400">This Park Request is already resolved.</p>
+        )}
+      </div>
     </div>
   );
 }

@@ -14,7 +14,7 @@ Park Requests (PRs) let community members propose bike park data changes while k
 
 - Submit amendment: `/(app)/bike-parks/[parkId]/park-request`.
 - Submit new park: `/(marketing)/bike-parks/park-request/new`.
-- Both flows use a two-column layout on large screens: a **reference column** mirrors the public park detail panel (amendments show the live listing plus review summary, map embed, trail pills with icons, facilities, and links; new-park proposals show a **live preview** from the form). The location block uses the interactive Google Maps picker when `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is set, and falls back to an embedded map preview otherwise.
+- Both flows use a two-column layout on large screens: a **reference column** mirrors the public park detail panel (amendments show the live listing plus review summary, map embed, trail pills with icons, facilities, and links; new-park proposals show a **live preview** from the form). The location block uses the shared `BikeParkLocationPicker` (about **60% viewport height**; tap/click map or drag the pin) when `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is set, and falls back to an embedded map preview otherwise.
 - Staff review uses the same `BikeParkFields` component as the park editor, with an optional **review** mode: status dots per section and “Show previous” vs the live park (amendments) or empty baseline (new parks).
 - New-park `proposedPatch` includes `payment` (`paid` \| `free`); approving a new park persists it to `bike_parks.payment`.
 - API write endpoint: `POST /api/park-requests`.
@@ -26,7 +26,7 @@ When signed out, the new-park page shows an explanation card and a sign-in CTA i
 ## Staff review flow
 
 - Queue route: `/(app)/admin/park-requests`.
-- Detail route: `/(app)/admin/park-requests/[requestId]`.
+- Detail route: `/(app)/admin/park-requests/[requestId]` — same wide two-column layout as member submission (listing preview or current listing in the sidebar, editable fields and approve/reject actions in the main column; no card wrapper).
 - Queue/list API: `GET /api/admin/park-requests`.
 - Detail/edit API: `GET/PATCH /api/admin/park-requests/:id`.
 - Resolve API:

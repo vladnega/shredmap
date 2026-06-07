@@ -37,21 +37,31 @@ export async function ParkRequestsAdminPageContent({
 
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
 
+  if (mode === 'detail' && requestId) {
+    return (
+      <div className="mx-auto w-full max-w-6xl px-4 py-8">
+        <h1 className="text-2xl font-semibold text-white">Park Request review</h1>
+        <p className="mt-2 text-sm text-zinc-400">
+          Review and edit the proposal before approving or rejecting.
+        </p>
+        <div className="mt-6">
+          <ParkRequestReview requestId={requestId} googleMapsApiKey={googleMapsApiKey} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
       <Card className="border-zinc-800 bg-zinc-900/70 text-zinc-100">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base text-white">
             <GitPullRequest className="h-4 w-4 text-orange-400" />
-            {mode === 'list' ? 'Park Request queue' : 'Park Request review'}
+            Park Request queue
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {mode === 'list' ? (
-            <ParkRequestsAdminList />
-          ) : requestId ? (
-            <ParkRequestReview requestId={requestId} googleMapsApiKey={googleMapsApiKey} />
-          ) : null}
+          <ParkRequestsAdminList />
         </CardContent>
       </Card>
     </div>
