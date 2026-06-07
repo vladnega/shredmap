@@ -1,29 +1,12 @@
 import type { MutableRefObject } from 'react';
 import type { BikeParkMapPoint } from '@/lib/bike-parks/fetch-bike-parks-for-map';
+import {
+  createCircleBikeParkMarker,
+  detachMapMarker,
+  type CircleBikeParkMarker,
+} from '@/lib/map/advanced-markers';
 
 const MARKER_ICON_SIZE = 40;
-
-function defaultOrangeCircle(): google.maps.Symbol {
-  return {
-    path: google.maps.SymbolPath.CIRCLE,
-    fillColor: '#f97316',
-    fillOpacity: 0.95,
-    strokeColor: '#ffedd5',
-    strokeWeight: 2,
-    scale: 12,
-  };
-}
-
-function highlightedOrangeCircle(): google.maps.Symbol {
-  return {
-    path: google.maps.SymbolPath.CIRCLE,
-    fillColor: '#fb923c',
-    fillOpacity: 1,
-    strokeColor: '#fff7ed',
-    strokeWeight: 3,
-    scale: 16,
-  };
-}
 
 /**
  * Round logo “pin” built from DOM (CSS clip). Works for cross-origin images where
@@ -172,7 +155,7 @@ function getBikeParkLogoOverlayClass(): LogoOverlayConstructor {
   return bikeParkLogoOverlayClass;
 }
 
-export type BikeParkMapMarker = google.maps.Marker | google.maps.OverlayView;
+export type BikeParkMapMarker = CircleBikeParkMarker | google.maps.OverlayView;
 
 export type BikeParkMarkerRegistry = {
   markers: BikeParkMapMarker[];
@@ -192,15 +175,13 @@ export function createEmptyBikeParkMarkerRegistry(): BikeParkMarkerRegistry {
  * Clears existing markers and attaches one Google Maps marker per park.
  * Keeps imperative map work out of the React component.
  */
-export function replaceBikeParkMarkersOnMap(
+export async function replaceBikeParkMarkersOnMap(
   map: google.maps.Map,
   registryRef: MutableRefObject<BikeParkMarkerRegistry>,
   parks: readonly BikeParkMapPoint[],
   onMarkerClick: (id: string) => void,
-): void {
-  registryRef.current.markers.forEach((m) => {
-    m.setMap(null);
-  });
+): Promise<void> {
+  registryRef.current.markers.forEach(detachMapMarker);
 
   const registry: BikeParkMarkerRegistry = {
     markers: [],
@@ -232,45 +213,19 @@ export function replaceBikeParkMarkersOnMap(
       continue;
     }
 
-    const marker = new google.maps.Marker({
+    const marker = await createCircleBikeParkMarker(
       map,
-      position: { lat: p.lat, lng: p.lng },
+      { lat: p.lat, lng: p.lng },
+      mates,
       title,
-      optimized: true,
-      icon: defaultOrangeCircle(),
-      label: hasMates
-        ? {
-            text: String(mates),
-            color: '#ffffff',
-            fontSize: '11px',
-            fontWeight: 'bold',
-          }
-        : undefined,
-      zIndex: hasMates ? 900 : undefined,
-    });
-
-    marker.addListener('click', () => {
-      onMarkerClick(p.id);
-    });
+      () => {
+        onMarkerClick(p.id);
+      },
+    );
 
     registry.markers.push(marker);
     registry.byParkId.set(p.id, marker);
   }
 
   registryRef.current = registry;
-}
-
-/** Updates circle markers to a larger highlighted icon when search selects a park. */
-export function setCircleMarkerSearchHighlight(
-  marker: google.maps.Marker,
-  highlight: boolean,
-): void {
-  marker.setIcon(highlight ? highlightedOrangeCircle() : defaultOrangeCircle());
-  if (highlight) {
-    marker.setAnimation(google.maps.Animation.BOUNCE);
-    marker.setZIndex(1000);
-  } else {
-    marker.setAnimation(null);
-    marker.setZIndex(null);
-  }
 }

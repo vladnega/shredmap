@@ -13,6 +13,7 @@ Without required WorkOS values, startup fails because `assertWorkOsConfigured()`
 
 ## Optional environment variables
 
+- `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` — JavaScript **vector** map ID for Advanced Markers. When omitted, the app uses Google's `DEMO_MAP_ID`. Basemap appearance is controlled via cloud styling on the map ID (the app does not pass embedded JSON `styles` when a map ID is present). Create a vector map ID in Google Cloud Console, apply dark styling, and set this variable for production.
 - `BASE_URL` for canonical link/callback generation
 - `OPENAI_API_KEY`, `OPENAI_MODEL` for chat features
 - `ENABLE_E2E_TEST_AUTH`, `TEST_APP_USERNAME`, `TEST_APP_SECRET` for E2E auth bootstrap

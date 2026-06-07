@@ -1,44 +1,23 @@
 import { importLibrary } from '@googlemaps/js-api-loader';
 
-/** Minimal dark map styling (Google Maps JS). */
-const SHREDMAP_MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { elementType: 'geometry', stylers: [{ color: '#1d2c4d' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
-  {
-    featureType: 'administrative.country',
-    elementType: 'geometry.stroke',
-    stylers: [{ color: '#4b6878' }],
-  },
-  {
-    featureType: 'landscape.natural',
-    elementType: 'geometry',
-    stylers: [{ color: '#023e58' }],
-  },
-  {
-    featureType: 'road',
-    elementType: 'geometry',
-    stylers: [{ color: '#304a7d' }],
-  },
-  {
-    featureType: 'water',
-    elementType: 'geometry',
-    stylers: [{ color: '#0e1626' }],
-  },
-];
+/** Map ID for Advanced Markers. Use a Cloud Console map ID in production (with dark styling there). */
+export function shredmapGoogleMapsMapId(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID?.trim();
+  return fromEnv || 'DEMO_MAP_ID';
+}
 
-/** Shared dark map chrome: styled basemap, dark native controls, no Google POI clicks. */
+/** Shared dark map chrome: map ID (cloud styling), dark native controls, no Google POI clicks. */
 export async function shredmapMapBaseOptions(): Promise<
   Pick<
     google.maps.MapOptions,
-    'backgroundColor' | 'clickableIcons' | 'colorScheme' | 'styles'
+    'backgroundColor' | 'clickableIcons' | 'colorScheme' | 'mapId'
   >
 > {
   const { ColorScheme } = await importLibrary('core');
   return {
+    mapId: shredmapGoogleMapsMapId(),
     backgroundColor: '#0a0a0a',
     clickableIcons: false,
     colorScheme: ColorScheme.DARK,
-    styles: SHREDMAP_MAP_STYLES,
   };
 }

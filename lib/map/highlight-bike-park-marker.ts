@@ -1,12 +1,9 @@
-import {
-  setCircleMarkerSearchHighlight,
-  type BikeParkMapMarker,
-  type BikeParkMarkerRegistry,
+import type {
+  BikeParkMapMarker,
+  BikeParkMarkerRegistry,
 } from '@/components/map/replace-bike-park-markers';
-
-function isGoogleMarker(marker: BikeParkMapMarker): marker is google.maps.Marker {
-  return marker instanceof google.maps.Marker;
-}
+import { setCircleMarkerSearchHighlight } from '@/lib/map/advanced-markers';
+import { ensureMarkerLibraryLoaded } from '@/lib/map/google-maps-loader';
 
 function isHighlightableOverlay(
   marker: BikeParkMapMarker,
@@ -14,8 +11,9 @@ function isHighlightableOverlay(
   return 'setHighlighted' in marker && typeof marker.setHighlighted === 'function';
 }
 
-function setMarkerHighlighted(marker: BikeParkMapMarker, highlight: boolean): void {
-  if (isGoogleMarker(marker)) {
+async function setMarkerHighlighted(marker: BikeParkMapMarker, highlight: boolean): Promise<void> {
+  const { AdvancedMarkerElement } = await ensureMarkerLibraryLoaded();
+  if (marker instanceof AdvancedMarkerElement) {
     setCircleMarkerSearchHighlight(marker, highlight);
     return;
   }
@@ -26,13 +24,13 @@ function setMarkerHighlighted(marker: BikeParkMapMarker, highlight: boolean): vo
 }
 
 /** Clears any previous highlight and applies it to the given park marker. */
-export function highlightBikeParkMarker(
+export async function highlightBikeParkMarker(
   registry: BikeParkMarkerRegistry,
   parkId: string | null,
-): void {
+): Promise<void> {
   if (registry.highlightedParkId && registry.highlightedParkId !== parkId) {
     const previous = registry.byParkId.get(registry.highlightedParkId);
-    if (previous) setMarkerHighlighted(previous, false);
+    if (previous) await setMarkerHighlighted(previous, false);
   }
 
   registry.highlightedParkId = parkId;
@@ -40,10 +38,12 @@ export function highlightBikeParkMarker(
   if (!parkId) return;
 
   const marker = registry.byParkId.get(parkId);
-  if (marker) setMarkerHighlighted(marker, true);
+  if (marker) await setMarkerHighlighted(marker, true);
 }
 
 /** Clears highlight state without changing which marker is selected in React. */
-export function clearBikeParkMarkerHighlight(registry: BikeParkMarkerRegistry): void {
-  highlightBikeParkMarker(registry, null);
+export async function clearBikeParkMarkerHighlight(
+  registry: BikeParkMarkerRegistry,
+): Promise<void> {
+  await highlightBikeParkMarker(registry, null);
 }

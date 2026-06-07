@@ -1,8 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
+import {
+  createLocationPickerPinElement,
+} from '@/lib/map/advanced-markers';
 import { googleMapsEmbedUrl } from '@/lib/map/google-maps-embed';
+import {
+  configureGoogleMapsApiKey,
+  ensureMarkerLibraryLoaded,
+  loadGoogleMapsLibrary,
+} from '@/lib/map/google-maps-loader';
 import { shredmapMapBaseOptions } from '@/lib/map/google-maps-theme';
 
 const MAP_CONTAINER_CLASSNAME =
@@ -17,15 +24,33 @@ type BikeParkLocationPickerProps = {
   onLocationChange: (lat: number, lng: number) => void;
 };
 
-function buildMarkerIcon(logoUrl?: string): google.maps.Icon | undefined {
+function buildMarkerContent(logoUrl?: string): Node {
   const trimmed = logoUrl?.trim();
-  if (!trimmed) return undefined;
+  if (trimmed) {
+    const img = document.createElement('img');
+    img.src = trimmed;
+    img.alt = '';
+    img.draggable = false;
+    img.style.width = '40px';
+    img.style.height = '40px';
+    img.style.borderRadius = '50%';
+    img.style.objectFit = 'cover';
+    img.style.border = '2px solid rgba(255, 255, 255, 0.45)';
+    img.style.display = 'block';
+    return img;
+  }
 
-  return {
-    url: trimmed,
-    scaledSize: new google.maps.Size(40, 40),
-    anchor: new google.maps.Point(20, 20),
-  };
+  return createLocationPickerPinElement();
+}
+
+function readMarkerLatLng(
+  position: google.maps.LatLng | google.maps.LatLngLiteral | null,
+): { lat: number; lng: number } | null {
+  if (!position) return null;
+  if (position instanceof google.maps.LatLng) {
+    return { lat: position.lat(), lng: position.lng() };
+  }
+  return { lat: position.lat, lng: position.lng };
 }
 
 export function BikeParkLocationPicker({
@@ -38,7 +63,7 @@ export function BikeParkLocationPicker({
 }: BikeParkLocationPickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
+  const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
   const [ready, setReady] = useState(false);
   const onLocationChangeRef = useRef(onLocationChange);
   onLocationChangeRef.current = onLocationChange;
@@ -48,7 +73,7 @@ export function BikeParkLocationPicker({
     const marker = markerRef.current;
     if (!map || !marker) return;
     const pos = { lat, lng };
-    marker.setPosition(pos);
+    marker.position = pos;
     map.panTo(pos);
   }, []);
 
@@ -58,8 +83,9 @@ export function BikeParkLocationPicker({
     let cancelled = false;
 
     void (async () => {
-      setOptions({ key: googleMapsApiKey, v: 'weekly' });
-      await importLibrary('maps');
+      configureGoogleMapsApiKey(googleMapsApiKey);
+      await loadGoogleMapsLibrary();
+      const { AdvancedMarkerElement } = await ensureMarkerLibraryLoaded();
       const baseOptions = await shredmapMapBaseOptions();
       if (cancelled || !containerRef.current) return;
 
@@ -74,19 +100,19 @@ export function BikeParkLocationPicker({
       });
       mapRef.current = map;
 
-      const marker = new google.maps.Marker({
+      const marker = new AdvancedMarkerElement({
         map,
         position: center,
-        draggable: true,
+        gmpDraggable: true,
         title: markerTitle?.trim() || 'Bike park location',
-        icon: buildMarkerIcon(markerLogoUrl),
+        content: buildMarkerContent(markerLogoUrl),
       });
       markerRef.current = marker;
 
       marker.addListener('dragend', () => {
-        const p = marker.getPosition();
-        if (p) {
-          onLocationChangeRef.current(p.lat(), p.lng());
+        const coords = readMarkerLatLng(marker.position);
+        if (coords) {
+          onLocationChangeRef.current(coords.lat, coords.lng);
         }
       });
 
@@ -94,7 +120,7 @@ export function BikeParkLocationPicker({
         if (!e.latLng) return;
         const lat = e.latLng.lat();
         const lng = e.latLng.lng();
-        marker.setPosition(e.latLng);
+        marker.position = { lat, lng };
         onLocationChangeRef.current(lat, lng);
       });
 
@@ -103,7 +129,9 @@ export function BikeParkLocationPicker({
 
     return () => {
       cancelled = true;
-      markerRef.current?.setMap(null);
+      if (markerRef.current) {
+        markerRef.current.map = null;
+      }
       markerRef.current = null;
       mapRef.current = null;
     };
@@ -113,8 +141,8 @@ export function BikeParkLocationPicker({
     const marker = markerRef.current;
     if (!ready || !marker) return;
 
-    marker.setTitle(markerTitle?.trim() || 'Bike park location');
-    marker.setIcon(buildMarkerIcon(markerLogoUrl) ?? null);
+    marker.title = markerTitle?.trim() || 'Bike park location';
+    marker.content = buildMarkerContent(markerLogoUrl);
   }, [markerLogoUrl, markerTitle, ready]);
 
   useEffect(() => {

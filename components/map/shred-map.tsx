@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
 import { Plus } from 'lucide-react';
 import type { BikePark } from '@/lib/db/schema';
 import { fetchBikeParksForMap } from '@/lib/bike-parks/fetch-bike-parks-for-map';
@@ -22,6 +21,12 @@ import { MAP_UI_LAYER_Z } from '@/lib/map/map-ui-layers';
 import { formatLocalCalendarDay } from '@/lib/date/local-calendar-day';
 import { fetchMatesOnMapCounts } from '@/lib/social/fetch-mates-on-map';
 import { useAppUser } from '@/lib/hooks/use-app-user';
+import { detachMapMarker } from '@/lib/map/advanced-markers';
+import {
+  configureGoogleMapsApiKey,
+  ensureMarkerLibraryLoaded,
+  loadGoogleMapsLibrary,
+} from '@/lib/map/google-maps-loader';
 import { shredmapMapBaseOptions } from '@/lib/map/google-maps-theme';
 
 const UK_CENTER = { lat: 54.2, lng: -2.5 };
@@ -137,7 +142,7 @@ export function ShredMap({
       }
 
       const map = mapRef.current;
-      replaceBikeParkMarkersOnMap(map, markersRef, parks, (id) => {
+      await replaceBikeParkMarkersOnMap(map, markersRef, parks, (id) => {
         highlightBikeParkMarker(markersRef.current, id);
         setSelectedId(id);
       });
@@ -152,11 +157,9 @@ export function ShredMap({
     let cancelled = false;
 
     void (async () => {
-      setOptions({
-        key: googleMapsApiKey,
-        v: 'weekly',
-      });
-      await importLibrary('maps');
+      configureGoogleMapsApiKey(googleMapsApiKey);
+      await loadGoogleMapsLibrary();
+      await ensureMarkerLibraryLoaded();
       const baseOptions = await shredmapMapBaseOptions();
       if (cancelled || !containerRef.current) return;
 
@@ -179,7 +182,7 @@ export function ShredMap({
 
     return () => {
       cancelled = true;
-      markersRef.current.markers.forEach((m) => m.setMap(null));
+      markersRef.current.markers.forEach(detachMapMarker);
       markersRef.current = createEmptyBikeParkMarkerRegistry();
       mapRef.current = null;
       setMapReady(false);
