@@ -16,6 +16,7 @@ Without required WorkOS values, startup fails because `assertWorkOsConfigured()`
 - `BASE_URL` for canonical link/callback generation
 - `OPENAI_API_KEY`, `OPENAI_MODEL` for chat features
 - `ENABLE_E2E_TEST_AUTH`, `TEST_APP_USERNAME`, `TEST_APP_SECRET` for E2E auth bootstrap
+- **Vercel Blob** for park logo uploads (`POST /api/uploads/park-image`). Connect a store under Vercel → Storage → Blob to the project. New projects use **OIDC**: `BLOB_STORE_ID` + `VERCEL_OIDC_TOKEN` (auto on deploy; for local dev run `vercel env pull`). **Local `pnpm dev`:** OIDC must be enabled for the **Development** environment on the store’s Projects tab, or set `BLOB_READ_WRITE_TOKEN` in `.env` (explicit token overrides OIDC). `BLOB_WEBHOOK_PUBLIC_KEY` is only for client-side presigned uploads (not used by Shredmap today).
 
 ## Runtime versions
 

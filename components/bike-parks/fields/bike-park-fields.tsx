@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { BikeParkLocationPicker } from '@/components/admin/bike-park-location-picker';
+import { ImageUrlOrUploadField } from '@/components/forms/image-url-or-upload-field';
 import { TrailDifficultyCountPills } from '@/components/bike-parks/trail-difficulty-count-pills';
 import { TrailDifficultyIcon } from '@/components/bike-parks/trail-difficulty-icon';
 import { Input } from '@/components/ui/input';
@@ -321,37 +322,35 @@ export function BikeParkFields({
   );
 
   const logoBlock = (
-    <div className="space-y-2">
-      <Label htmlFor={`${idPrefix}-logo`} className={labelClass}>
-        Logo URL (optional)
-      </Label>
-      <Input
-        id={`${idPrefix}-logo`}
-        type={urlType}
-        value={value.logoUrl}
-        onChange={(e) => setPartial({ logoUrl: e.target.value })}
-        placeholder={urlPlaceholder}
-        disabled={disabled}
-        className={inputClass}
-      />
-    </div>
+    <ImageUrlOrUploadField
+      id={`${idPrefix}-logo`}
+      label="Logo (optional)"
+      value={value.logoUrl}
+      onChange={(logoUrl) => setPartial({ logoUrl })}
+      variant="logo"
+      disabled={disabled}
+      urlInputType={urlType}
+      urlPlaceholder={urlPlaceholder}
+      inputClassName={inputClass}
+      labelClassName={labelClass}
+      previewShape="square"
+    />
   );
 
   const pinBlock = (
-    <div className="space-y-2">
-      <Label htmlFor={`${idPrefix}-pin`} className={labelClass}>
-        Pin logo URL (optional)
-      </Label>
-      <Input
-        id={`${idPrefix}-pin`}
-        type={urlType}
-        value={value.pinLogoUrl}
-        onChange={(e) => setPartial({ pinLogoUrl: e.target.value })}
-        placeholder={urlPlaceholder}
-        disabled={disabled}
-        className={inputClass}
-      />
-    </div>
+    <ImageUrlOrUploadField
+      id={`${idPrefix}-pin`}
+      label="Pin logo (optional)"
+      value={value.pinLogoUrl}
+      onChange={(pinLogoUrl) => setPartial({ pinLogoUrl })}
+      variant="pin"
+      disabled={disabled}
+      urlInputType={urlType}
+      urlPlaceholder={urlPlaceholder}
+      inputClassName={inputClass}
+      labelClassName={labelClass}
+      previewShape="circle"
+    />
   );
 
   const openingHoursBlock = (
@@ -638,48 +637,38 @@ export function BikeParkFields({
           </div>
         ))}
         {section('logoUrl', ({ statusDot, showPreviousControl }) => (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                {statusDot}
-                <Label htmlFor={`${idPrefix}-logo`} className={labelClass}>
-                  Logo URL (optional)
-                </Label>
-              </div>
-              {showPreviousControl}
-            </div>
-            <Input
-              id={`${idPrefix}-logo`}
-              type={urlType}
-              value={value.logoUrl}
-              onChange={(e) => setPartial({ logoUrl: e.target.value })}
-              placeholder={urlPlaceholder}
-              disabled={disabled}
-              className={inputClass}
-            />
-          </div>
+          <ImageUrlOrUploadField
+            id={`${idPrefix}-logo`}
+            label="Logo (optional)"
+            value={value.logoUrl}
+            onChange={(logoUrl) => setPartial({ logoUrl })}
+            variant="logo"
+            disabled={disabled}
+            urlInputType={urlType}
+            urlPlaceholder={urlPlaceholder}
+            inputClassName={inputClass}
+            labelClassName={labelClass}
+            previewShape="square"
+            headerStart={statusDot}
+            headerEnd={showPreviousControl}
+          />
         ))}
         {section('pinLogoUrl', ({ statusDot, showPreviousControl }) => (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                {statusDot}
-                <Label htmlFor={`${idPrefix}-pin`} className={labelClass}>
-                  Pin logo URL (optional)
-                </Label>
-              </div>
-              {showPreviousControl}
-            </div>
-            <Input
-              id={`${idPrefix}-pin`}
-              type={urlType}
-              value={value.pinLogoUrl}
-              onChange={(e) => setPartial({ pinLogoUrl: e.target.value })}
-              placeholder={urlPlaceholder}
-              disabled={disabled}
-              className={inputClass}
-            />
-          </div>
+          <ImageUrlOrUploadField
+            id={`${idPrefix}-pin`}
+            label="Pin logo (optional)"
+            value={value.pinLogoUrl}
+            onChange={(pinLogoUrl) => setPartial({ pinLogoUrl })}
+            variant="pin"
+            disabled={disabled}
+            urlInputType={urlType}
+            urlPlaceholder={urlPlaceholder}
+            inputClassName={inputClass}
+            labelClassName={labelClass}
+            previewShape="circle"
+            headerStart={statusDot}
+            headerEnd={showPreviousControl}
+          />
         ))}
         {section('openingHours', ({ statusDot, showPreviousControl }) => (
           <div className="space-y-3">

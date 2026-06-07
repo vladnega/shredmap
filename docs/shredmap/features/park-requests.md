@@ -15,6 +15,7 @@ Park Requests (PRs) let community members propose bike park data changes while k
 - Submit amendment: `/(app)/bike-parks/[parkId]/park-request`.
 - Submit new park: `/(marketing)/bike-parks/park-request/new`.
 - Both flows use a two-column layout on large screens: a **reference column** mirrors the public park detail panel (amendments show the live listing plus review summary, map embed, trail pills with icons, facilities, and links; new-park proposals show a **live preview** from the form). The location block uses the shared `BikeParkLocationPicker` (about **60% viewport height**; tap/click map or drag the pin) when `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is set, and falls back to an embedded map preview otherwise.
+- **Logo fields** (`Logo`, `Pin logo`): default to **Upload** (JPEG/PNG/WebP, resized client-side then on the server to WebP). Toggle **URL** to paste an external `https://` link instead. Uploads go to **Vercel Blob** via `POST /api/uploads/park-image`; the returned public URL is stored in `proposedPatch` like any other logo URL. Requires Vercel Blob env vars (OIDC: `BLOB_STORE_ID` + `VERCEL_OIDC_TOKEN`, or legacy `BLOB_READ_WRITE_TOKEN`; 503 if missing).
 - Staff review uses the same `BikeParkFields` component as the park editor, with an optional **review** mode: status dots per section and “Show previous” vs the live park (amendments) or empty baseline (new parks).
 - New-park `proposedPatch` includes `payment` (`paid` \| `free`); approving a new park persists it to `bike_parks.payment`.
 - API write endpoint: `POST /api/park-requests`.

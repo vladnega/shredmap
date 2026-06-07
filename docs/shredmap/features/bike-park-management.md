@@ -20,7 +20,13 @@
 - Create payloads include `payment` (`paid` \| `free`, default `free`) alongside coordinates and optional URLs.
 - Patch requests must include at least one mutable field.
 
-Shared bike-park field UI (staff editor, park requests, and staff request review) lives in `components/bike-parks/fields/bike-park-fields.tsx` so section order and controls stay aligned.
+Shared bike-park field UI (staff editor, park requests, and staff request review) lives in `components/bike-parks/fields/bike-park-fields.tsx` so section order and controls stay aligned. Logo and pin logo fields use the reusable `ImageUrlOrUploadField` (`components/forms/image-url-or-upload-field.tsx`): upload to Vercel Blob or paste a URL.
+
+## Logo uploads
+
+- `POST /api/uploads/park-image` — authenticated (`member`, `admin`, or `moderator`); accepts `multipart/form-data` with `file` and `variant` (`logo` \| `pin`).
+- Images are resized (logo max 256px, pin max 128px) and stored as public WebP in Vercel Blob; response `{ url }` is saved in `logoUrl` / `pinLogoUrl`.
+- Requires Vercel Blob credentials (OIDC or `BLOB_READ_WRITE_TOKEN`; see [Environment and operations](../reference/environment-and-operations.md)).
 
 ## Staff UI routes
 
