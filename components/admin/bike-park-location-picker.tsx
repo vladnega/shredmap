@@ -3,27 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
 import { googleMapsEmbedUrl } from '@/lib/map/google-maps-embed';
-
-const PICKER_STYLES: google.maps.MapTypeStyle[] = [
-  { elementType: 'geometry', stylers: [{ color: '#1d2c4d' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
-  {
-    featureType: 'landscape.natural',
-    elementType: 'geometry',
-    stylers: [{ color: '#023e58' }],
-  },
-  {
-    featureType: 'road',
-    elementType: 'geometry',
-    stylers: [{ color: '#304a7d' }],
-  },
-  {
-    featureType: 'water',
-    elementType: 'geometry',
-    stylers: [{ color: '#0e1626' }],
-  },
-];
+import { shredmapMapBaseOptions } from '@/lib/map/google-maps-theme';
 
 const MAP_CONTAINER_CLASSNAME =
   'relative h-[60dvh] w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900';
@@ -80,17 +60,17 @@ export function BikeParkLocationPicker({
     void (async () => {
       setOptions({ key: googleMapsApiKey, v: 'weekly' });
       await importLibrary('maps');
+      const baseOptions = await shredmapMapBaseOptions();
       if (cancelled || !containerRef.current) return;
 
       const center = { lat: latitude, lng: longitude };
       const map = new google.maps.Map(containerRef.current, {
+        ...baseOptions,
         center,
         zoom: 12,
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
-        styles: PICKER_STYLES,
-        backgroundColor: '#0a0a0a',
       });
       mapRef.current = map;
 

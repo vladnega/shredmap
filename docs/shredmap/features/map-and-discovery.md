@@ -4,7 +4,7 @@
 
 - Public users can open `/` and browse bike parks without signing in.
 - Optional query `?park=<bike-park-id>` opens that park’s detail panel on load (used when returning from the review editor).
-- The homepage is a full-screen map (`100dvh`) with park markers from Postgres.
+- The homepage is a full-screen map (`100dvh`) with park markers from Postgres. Native Google Maps UI (zoom/fullscreen controls) uses the **dark** color scheme. Built-in Google POI markers (shops, hospitals, etc.) are **not clickable** — only bike park markers open Shredmap detail UI.
 - Signed-in users: pick a **calendar day** in the top chrome; **mates** who planned a ride at a park that day are reflected on markers (count label + emphasis). See [Mates, invites, and ride plans](./social-and-ride-plans.md).
 - The top chrome includes a **Map | Mates** switch (`/` vs `/mates`). If you are not signed in, **Mates** still goes to `/mates`, which explains that you need to sign in or create an account before you can use mates.
 - **Search:** below the day picker in the top-left chrome (magnifying glass) expands into a name filter. Matching parks appear in a list; choosing one pans/zooms the map to that park and highlights its marker (without opening the detail panel). When not signed in (no day picker), search sits below the Map | Mates switch.

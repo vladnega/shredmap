@@ -22,36 +22,10 @@ import { MAP_UI_LAYER_Z } from '@/lib/map/map-ui-layers';
 import { formatLocalCalendarDay } from '@/lib/date/local-calendar-day';
 import { fetchMatesOnMapCounts } from '@/lib/social/fetch-mates-on-map';
 import { useAppUser } from '@/lib/hooks/use-app-user';
+import { shredmapMapBaseOptions } from '@/lib/map/google-maps-theme';
 
 const UK_CENTER = { lat: 54.2, lng: -2.5 };
 const DEFAULT_ZOOM = 6;
-
-/** Minimal dark map styling (Google Maps JS). */
-const MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { elementType: 'geometry', stylers: [{ color: '#1d2c4d' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
-  {
-    featureType: 'administrative.country',
-    elementType: 'geometry.stroke',
-    stylers: [{ color: '#4b6878' }],
-  },
-  {
-    featureType: 'landscape.natural',
-    elementType: 'geometry',
-    stylers: [{ color: '#023e58' }],
-  },
-  {
-    featureType: 'road',
-    elementType: 'geometry',
-    stylers: [{ color: '#304a7d' }],
-  },
-  {
-    featureType: 'water',
-    elementType: 'geometry',
-    stylers: [{ color: '#0e1626' }],
-  },
-];
 
 export function ShredMap({
   googleMapsApiKey,
@@ -183,9 +157,11 @@ export function ShredMap({
         v: 'weekly',
       });
       await importLibrary('maps');
+      const baseOptions = await shredmapMapBaseOptions();
       if (cancelled || !containerRef.current) return;
 
       const map = new google.maps.Map(containerRef.current, {
+        ...baseOptions,
         center: UK_CENTER,
         zoom: DEFAULT_ZOOM,
         disableDefaultUI: false,
@@ -196,8 +172,6 @@ export function ShredMap({
         fullscreenControlOptions: {
           position: google.maps.ControlPosition.RIGHT_BOTTOM,
         },
-        styles: MAP_STYLES,
-        backgroundColor: '#0a0a0a',
       });
       mapRef.current = map;
       setMapReady(true);
